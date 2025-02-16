@@ -806,7 +806,7 @@ const Editor: React.FC<EditorProps> = ({ content, setContent, selectedFont, sele
             <div className="mt-2 flex flex-wrap gap-2">
               {content.skills.map((skill, index) => (
                 <div
-                  key={index}
+                  key={skill + index}
                   className={`group ${getFontSize('px-3 py-1.5')} bg-gray-100 rounded-md hover:bg-gray-200 transition-colors duration-200 flex items-center justify-center gap-2`}
                 >
                   <EditableField
@@ -816,10 +816,13 @@ const Editor: React.FC<EditorProps> = ({ content, setContent, selectedFont, sele
                     className={`inline-block text-center w-full ${getFontSize('text-gray-600')}`}
                   />
                   <button
-                    onClick={() => {
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      const newSkills = [...content.skills];
+                      newSkills.splice(index, 1);
                       setContent(prev => ({
                         ...prev,
-                        skills: prev.skills.filter((_, i) => i !== index)
+                        skills: newSkills
                       }));
                     }}
                     className="opacity-0 group-hover:opacity-100 p-1 hover:bg-gray-100 rounded-full transition-all"

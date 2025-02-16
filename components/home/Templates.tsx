@@ -7,24 +7,10 @@ import { HiCheck } from 'react-icons/hi';
 const templates = [
   {
     name: "Professional",
-    image: "/templates/professional.jpg",
+    image: "/templates/professional.png",
     description: "Clean and modern design perfect for corporate roles",
     features: ["ATS-Friendly", "Multiple Color Schemes", "Customizable Sections"],
     tag: "Most Popular 🔥"
-  },
-  {
-    name: "Creative",
-    image: "/templates/creative.jpg",
-    description: "Stand out with a unique layout for creative positions",
-    features: ["Visual Elements", "Portfolio Section", "Custom Typography"],
-    tag: "Designer's Choice 🎨"
-  },
-  {
-    name: "Executive",
-    image: "/templates/executive.jpg",
-    description: "Elegant design for senior-level professionals",
-    features: ["Achievement Focused", "Executive Summary", "Skills Matrix"],
-    tag: "Premium ⭐️"
   }
 ];
 
@@ -43,29 +29,29 @@ export default function Templates() {
             TEMPLATES 🖼️
           </span>
           <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
-            Choose Your Perfect Template
+            Professional Template
           </h2>
           <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            Professional templates designed by HR experts and data-driven insights
+            Our professional template is designed by HR experts and optimized for ATS systems
           </p>
         </motion.div>
 
-        <div className="grid lg:grid-cols-3 gap-8">
+        <div className="flex justify-center">
           {templates.map((template, index) => (
             <motion.div
               key={index}
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: index * 0.1 }}
+              transition={{ duration: 0.5 }}
               viewport={{ once: true }}
-              className="bg-white rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300"
+              className="bg-white rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300 max-w-md w-full"
             >
-              <div className="relative h-64 w-full">
+              <div className="relative h-72 w-full">
                 <Image
                   src={template.image}
                   alt={template.name}
                   fill
-                  className="object-cover rounded-t-lg"
+                  className="object-cover object-top rounded-t-lg"
                 />
                 <div className="absolute top-4 right-4">
                   <span className="bg-white/90 backdrop-blur-sm text-primary-700 text-sm font-medium px-3 py-1 rounded-md shadow-sm">

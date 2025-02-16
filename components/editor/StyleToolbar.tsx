@@ -12,6 +12,7 @@ import {
   HiDownload
 } from 'react-icons/hi';
 import Image from 'next/image';
+import Link from 'next/link';
 import type { ResumeContent } from '@/types/resume';
 import React from 'react';
 
@@ -333,11 +334,11 @@ export default React.memo(function StyleToolbar({
     <div className="bg-white border-b border-gray-200 sticky top-0 z-50 shadow-md backdrop-blur-sm bg-white/90">
       <div className="max-w-7xl mx-auto px-4 py-3">
         <div className="flex items-center justify-between h-14">
-          {/* Logo section simplified */}
+          {/* Logo section with Link */}
           <div className="flex items-center">
-            <span className="text-[1.5rem] font-bold bg-gradient-to-r from-primary-600 to-secondary-600 bg-clip-text text-transparent">
+            <Link href="/" className="text-[1.5rem] font-bold bg-gradient-to-r from-primary-600 to-secondary-600 bg-clip-text text-transparent hover:opacity-80 transition-opacity">
               ResumeCraft
-            </span>
+            </Link>
           </div>
 
           {/* Toolbar Items */}

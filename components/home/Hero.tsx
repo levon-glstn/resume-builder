@@ -72,11 +72,13 @@ export default function Hero() {
             <div className="relative w-full h-[600px] rounded-lg overflow-hidden shadow-2xl transform rotate-2 hover:rotate-0 transition-transform duration-300">
               <div className="absolute inset-0 bg-gradient-to-br from-primary-500/10 to-secondary-500/10 z-10" />
               <Image
-                src="/images/resume-template.jpg"
+                src="/images/hero-template.png"
                 alt="Professional Resume Template"
                 fill
-                className="object-contain"
+                className="object-cover"
                 priority
+                sizes="(max-width: 768px) 100vw, 50vw"
+                quality={100}
               />
             </div>
             <div className="absolute -bottom-6 -right-6 w-48 h-48 bg-gradient-to-br from-primary-500 to-secondary-500 rounded-full blur-3xl opacity-20" />

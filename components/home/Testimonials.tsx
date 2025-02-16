@@ -6,7 +6,7 @@ import { HiStar } from 'react-icons/hi';
 
 const testimonials = [
   {
-    name: "Sarah Johnson",
+    name: "Brian Johnson",
     role: "Software Engineer",
     image: "/testimonials/user1.jpg",
     company: "Tech Corp",

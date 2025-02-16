@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Rubik } from "next/font/google";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import "./globals.css";
 
 const rubik = Rubik({ 
@@ -26,6 +27,7 @@ export default function RootLayout({
     <html lang="en" className={rubik.className}>
       <body>
         {children}
+        <SpeedInsights />
       </body>
     </html>
   );

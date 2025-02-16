@@ -16,17 +16,9 @@ const nextConfig = {
       }
     })
 
-    // Add JSX support
-    config.module.rules.push({
-      test: /\.(js|jsx|ts|tsx)$/,
-      use: ['babel-loader'],
-      exclude: /node_modules/,
-    })
-
     return config
   },
   reactStrictMode: true,
-  swcMinify: true,
 }
 
 module.exports = nextConfig 

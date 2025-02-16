@@ -6,6 +6,9 @@ const rubik = Rubik({
   subsets: ["latin"],
   weight: ['400', '500', '600', '700'],
   display: 'swap',
+  preload: true,
+  fallback: ['system-ui', 'arial'],
+  adjustFontFallback: true,
 });
 
 export const metadata: Metadata = {
@@ -20,8 +23,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body className={rubik.className}>
+    <html lang="en" className={rubik.className}>
+      <body>
         {children}
       </body>
     </html>

@@ -19,6 +19,7 @@ import {
   HiOutlineGlobeAlt,
   HiDownload
 } from 'react-icons/hi';
+import { HiOutlineDocumentText } from 'react-icons/hi';
 import { FaLinkedin } from 'react-icons/fa';
 import { generatePDF } from '@/utils/pdfGenerator';
 
@@ -33,6 +34,14 @@ const colors = [
   '#1e40af', // Blue
 ];
 
+// Define available fonts
+const fonts = [
+  { name: 'Poppins', value: 'Poppins, sans-serif' },
+  { name: 'Rubik', value: 'Rubik, sans-serif' },
+  { name: 'Roboto', value: 'Roboto, sans-serif' },
+  { name: 'Open Sans', value: 'Open Sans, sans-serif' },
+];
+
 interface SidebarProps {
   primaryColor: string;
   activeSections: Record<string, boolean>;
@@ -41,6 +50,8 @@ interface SidebarProps {
   onNewResume: () => void;
   defaultContent: any;
   resumeRef: React.RefObject<HTMLElement>;
+  fontFamily: string;
+  onFontChange: (font: string) => void;
 }
 
 export default function Sidebar({
@@ -50,7 +61,9 @@ export default function Sidebar({
   onSectionToggle,
   onNewResume,
   defaultContent,
-  resumeRef
+  resumeRef,
+  fontFamily,
+  onFontChange
 }: SidebarProps) {
   const [isCollapsed, setIsCollapsed] = React.useState(false);
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
@@ -158,6 +171,30 @@ export default function Sidebar({
                         setSelectedColor(color);
                       }}
                     />
+                  ))}
+                </div>
+              </div>
+
+              {/* Font Selector */}
+              <div className="space-y-2">
+                <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                  <HiOutlineDocumentText className="w-5 h-5" />
+                  Font Family
+                </label>
+                <div className="space-y-2">
+                  {fonts.map((font) => (
+                    <button
+                      key={font.name}
+                      className={`w-full text-left px-3 py-2 rounded-md text-sm transition-colors ${
+                        fontFamily === font.value 
+                          ? 'bg-primary-100 text-primary-700' 
+                          : 'bg-gray-50 hover:bg-gray-100'
+                      }`}
+                      onClick={() => onFontChange(font.value)}
+                      style={{ fontFamily: font.value }}
+                    >
+                      {font.name}
+                    </button>
                   ))}
                 </div>
               </div>

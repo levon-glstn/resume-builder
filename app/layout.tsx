@@ -1,15 +1,31 @@
 import type { Metadata } from "next";
-import { Rubik } from "next/font/google";
+import { Rubik, Poppins, Roboto, Open_Sans } from "next/font/google";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import "./globals.css";
 
-const rubik = Rubik({ 
-  subsets: ["latin"],
+// Load the fonts
+const poppins = Poppins({
+  subsets: ['latin'],
   weight: ['400', '500', '600', '700'],
-  display: 'swap',
-  preload: true,
-  fallback: ['system-ui', 'arial'],
-  adjustFontFallback: true,
+  variable: '--font-poppins',
+});
+
+const rubik = Rubik({
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700'],
+  variable: '--font-rubik',
+});
+
+const roboto = Roboto({
+  subsets: ['latin'],
+  weight: ['400', '500', '700'],
+  variable: '--font-roboto',
+});
+
+const openSans = Open_Sans({
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700'],
+  variable: '--font-open-sans',
 });
 
 export const metadata: Metadata = {
@@ -32,9 +48,15 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={rubik.className}>
+    <html lang="en" className={`${poppins.variable} ${rubik.variable} ${roboto.variable} ${openSans.variable}`}>
       <head>
         <link rel="icon" href="/favicon.ico" sizes="any" />
+        <title>Resume Builder</title>
+        <meta name="description" content="Create professional resumes in minutes" />
+        <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet" />
+        <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700&display=swap" rel="stylesheet" />
+        <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet" />
+        <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
       </head>
       <body>
         {children}

@@ -29,6 +29,7 @@ interface EditorProps {
   onContentChange: (content: ResumeContent) => void;
   activeSections: Record<string, boolean>;
   primaryColor: string;
+  fontFamily: string;
 }
 
 interface SectionData {
@@ -285,7 +286,8 @@ const Editor = forwardRef<HTMLElement, EditorProps>(({
   content,
   onContentChange,
   activeSections,
-  primaryColor
+  primaryColor,
+  fontFamily
 }, ref) => {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [imagePosition, setImagePosition] = useState({ y: 0 });
@@ -473,6 +475,8 @@ const Editor = forwardRef<HTMLElement, EditorProps>(({
   const allowedContactFields = ['email', 'phone', 'location', 'linkedin', 'url'] as const;
   type ContactField = typeof allowedContactFields[number];
 
+  console.log('Photo section active:', activeSections['contact.photo']);
+
   return (
     <article 
       ref={ref} 
@@ -483,6 +487,7 @@ const Editor = forwardRef<HTMLElement, EditorProps>(({
         padding: '15mm',
         margin: '0 auto',
         boxSizing: 'border-box',
+        fontFamily: fontFamily,
       }}
     >
       {/* Header */}
@@ -525,7 +530,8 @@ const Editor = forwardRef<HTMLElement, EditorProps>(({
             })}
           </div>
         </div>
-        {activeSections['contact.photo'] && selectedImage && (
+        {activeSections['contact.photo'] && (
+          console.log('Rendering photo section'),
           <div className="flex-shrink-0 w-32 h-32">
             <div className="w-full h-full bg-gray-100 rounded-lg overflow-hidden">
               <input

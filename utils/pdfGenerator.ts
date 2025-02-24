@@ -161,13 +161,22 @@ export async function generatePDF(resumeElement: HTMLElement): Promise<void> {
       '[role="button"]',
     ]);
 
-    // Fix photo sizing and aspect ratio
-    const photoElement = clonedElement.querySelector('img[alt="Profile"]');
-    if (photoElement instanceof HTMLImageElement) {
-      photoElement.style.width = '128px'; // 32mm equivalent
-      photoElement.style.height = '128px';
-      photoElement.style.objectFit = 'cover';
-      photoElement.style.borderRadius = '8px';
+    // Remove photo placeholder if no photo was uploaded
+    const photoContainer = clonedElement.querySelector('.flex-shrink-0.w-32.h-32');
+    if (photoContainer) {
+      const photoImg = photoContainer.querySelector('img[src]');
+      if (!photoImg || !photoImg.getAttribute('src')) {
+        // No photo was uploaded, remove the entire photo container
+        photoContainer.remove();
+      } else {
+        // Fix photo sizing and aspect ratio
+        if (photoImg instanceof HTMLImageElement) {
+          photoImg.style.width = '128px'; // 32mm equivalent
+          photoImg.style.height = '128px';
+          photoImg.style.objectFit = 'cover';
+          photoImg.style.borderRadius = '8px';
+        }
+      }
     }
 
     // Fix contact icons alignment
@@ -233,19 +242,7 @@ export async function generatePDF(resumeElement: HTMLElement): Promise<void> {
       }
     });
 
-    // Verify and fix contact icons
-    clonedElement.querySelectorAll('.contact > div').forEach((item, index) => {
-      const itemEl = item as HTMLElement;
-      const icon = itemEl.querySelector('svg, img');
-      console.log(`Contact icon ${index} final check:`, {
-        itemDisplay: itemEl.style.display,
-        itemAlign: itemEl.style.alignItems,
-        iconPresent: !!icon,
-        iconDisplay: icon instanceof HTMLElement ? icon.style.display : 'N/A'
-      });
-    });
-
-    // Fix skill tags styling with debug markers
+    // Fix skill tags styling with debug markers - Make text bold
     const skillTags = clonedElement.querySelectorAll('.skill-tag');
     skillTags.forEach((tag, index) => {
       const tagElement = tag as HTMLElement;
@@ -284,7 +281,7 @@ export async function generatePDF(resumeElement: HTMLElement): Promise<void> {
         line-height: 24px !important;
         transform: translateY(-8px) !important;
         font-size: 14px !important;
-        font-weight: 500 !important;
+        font-weight: 700 !important; /* Changed from 500 to 700 for bolder text */
         color: white !important;
         font-family: system-ui, -apple-system, sans-serif !important;
         text-align: center !important;
@@ -310,7 +307,7 @@ export async function generatePDF(resumeElement: HTMLElement): Promise<void> {
     clonedElement.style.fontSize = styles.fontSize;
     clonedElement.style.color = styles.color;
     clonedElement.style.backgroundColor = 'white';
-    clonedElement.style.padding = '15mm';
+    clonedElement.style.padding = '10mm';
     clonedElement.style.boxSizing = 'border-box';
 
     // Wait for fonts and images
@@ -318,28 +315,30 @@ export async function generatePDF(resumeElement: HTMLElement): Promise<void> {
     convertSvgIconsToImages(clonedElement);
     await waitForImages(clonedElement);
 
-    // Create PDF with A4+ dimensions
+    // Create PDF with A4 dimensions (not stretched)
     const pdf = new jsPDF({
       orientation: 'portrait',
       unit: 'mm',
-      format: [225, 315], // A4+ size
+      format: 'a4', // Standard A4 size
       compress: true
     });
 
     // Calculate dimensions and scaling
-    const pdfWidth = 225; // A4+ width in mm
-    const pdfHeight = 315; // A4+ height in mm
+    const pdfWidth = 210; // Standard A4 width in mm
+    const pdfHeight = 297; // Standard A4 height in mm
     
     // Calculate the scale factor to maintain aspect ratio with higher quality
     const elementWidth = clonedElement.offsetWidth;
     const elementHeight = clonedElement.offsetHeight;
-    const scale = 4; // Fixed high-quality scale
+    
+    // Use a fixed scale for high quality without stretching
+    const scale = 2;
 
     // Generate high-quality canvas with proper scaling
     const canvas = await html2canvas(clonedElement, {
       scale: scale,
       useCORS: true,
-      logging: true, // Enable logging
+      logging: false,
       allowTaint: true,
       backgroundColor: '#ffffff',
       width: elementWidth,
@@ -354,8 +353,28 @@ export async function generatePDF(resumeElement: HTMLElement): Promise<void> {
       }
     });
 
-    // Add canvas to PDF
-    pdf.addImage(canvas, 'JPEG', 0, 0, pdfWidth, pdfHeight);
+    // Calculate aspect ratio to prevent stretching
+    const canvasAspectRatio = canvas.width / canvas.height;
+    const pdfAspectRatio = pdfWidth / pdfHeight;
+    
+    let finalWidth, finalHeight;
+    
+    if (canvasAspectRatio > pdfAspectRatio) {
+      // Canvas is wider than PDF, fit to width
+      finalWidth = pdfWidth;
+      finalHeight = pdfWidth / canvasAspectRatio;
+    } else {
+      // Canvas is taller than PDF, fit to height
+      finalHeight = pdfHeight;
+      finalWidth = pdfHeight * canvasAspectRatio;
+    }
+    
+    // Center the image on the page with smaller margins
+    const xOffset = Math.max((pdfWidth - finalWidth) / 2, 5); // Minimum 5mm margin
+    const yOffset = Math.max((pdfHeight - finalHeight) / 2, 5); // Minimum 5mm margin
+
+    // Add canvas to PDF with proper dimensions to prevent stretching
+    pdf.addImage(canvas, 'JPEG', xOffset, yOffset, finalWidth, finalHeight);
 
     // Save PDF
     pdf.save(fileName);

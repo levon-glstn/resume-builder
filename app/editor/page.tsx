@@ -4,12 +4,14 @@ import { useState, useRef, useEffect } from 'react';
 import Editor from '../../components/editor/Editor';
 import Sidebar from '../../components/editor/Sidebar';
 import type { ResumeContent } from '../../types/resume';
+import { Poppins, Rubik, Roboto, Open_Sans } from 'next/font/google';
 
 // Storage keys
 const STORAGE_KEYS = {
   RESUME_CONTENT: 'resumeContent',
   ACTIVE_SECTIONS: 'activeSections',
-  PRIMARY_COLOR: 'primaryColor'
+  PRIMARY_COLOR: 'primaryColor',
+  FONT_FAMILY: 'fontFamily'
 } as const;
 
 // Default content for the resume
@@ -61,6 +63,7 @@ const defaultContent: ResumeContent = {
 export default function EditorPage() {
   const [content, setContent] = useState<ResumeContent>(defaultContent);
   const [primaryColor, setPrimaryColor] = useState('#4338ca');
+  const [fontFamily, setFontFamily] = useState('Poppins');
   const [activeSections, setActiveSections] = useState<Record<string, boolean>>({
     experience: true,
     education: true,
@@ -82,6 +85,7 @@ export default function EditorPage() {
     const savedContent = localStorage.getItem(STORAGE_KEYS.RESUME_CONTENT);
     const savedColor = localStorage.getItem(STORAGE_KEYS.PRIMARY_COLOR);
     const savedSections = localStorage.getItem(STORAGE_KEYS.ACTIVE_SECTIONS);
+    const savedFont = localStorage.getItem(STORAGE_KEYS.FONT_FAMILY);
 
     if (savedContent) {
       setContent(JSON.parse(savedContent));
@@ -91,6 +95,9 @@ export default function EditorPage() {
     }
     if (savedSections) {
       setActiveSections(JSON.parse(savedSections));
+    }
+    if (savedFont) {
+      setFontFamily(savedFont);
     }
   }, []);
 
@@ -110,6 +117,10 @@ export default function EditorPage() {
     localStorage.setItem(STORAGE_KEYS.PRIMARY_COLOR, primaryColor);
   }, [primaryColor]);
 
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEYS.FONT_FAMILY, fontFamily);
+  }, [fontFamily]);
+
   const handleNewResume = () => {
     if (window.confirm('Are you sure you want to start a new resume? This will clear all current data.')) {
       setContent(defaultContent);
@@ -127,6 +138,7 @@ export default function EditorPage() {
         'contact.url': false,
       });
       setPrimaryColor('#4338ca');
+      setFontFamily('Poppins');
     }
   };
 
@@ -147,6 +159,8 @@ export default function EditorPage() {
         onNewResume={handleNewResume}
         defaultContent={defaultContent}
         resumeRef={resumeRef}
+        fontFamily={fontFamily}
+        onFontChange={setFontFamily}
       />
       <main className="flex-1 overflow-auto py-8">
         <div className="mx-auto" style={{ maxWidth: 'calc(210mm + 2rem)' }}>
@@ -156,6 +170,7 @@ export default function EditorPage() {
             onContentChange={setContent}
             activeSections={activeSections}
             primaryColor={primaryColor}
+            fontFamily={fontFamily}
           />
         </div>
       </main>

@@ -5,6 +5,8 @@ import Features from '@/components/home/Features';
 import Templates from '@/components/home/Templates';
 import Testimonials from '@/components/home/Testimonials';
 import FAQ from '@/components/home/FAQ';
+import EditableField from '@/components/editor/EditableField';
+import { Switch } from '@/components/ui/switch';
 
 const defaultActiveSections = {
   phone: true,

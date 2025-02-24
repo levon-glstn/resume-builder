@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import Image from 'next/image';
 
 interface EditableFieldProps {
@@ -72,6 +72,50 @@ const EditableField: React.FC<EditableFieldProps> = ({
       setIsEditing(false);
     }
   };
+
+  // Function to process content and enhance bullet points
+  const processContent = (content: string) => {
+    if (!content) return '';
+    // Replace bullet points with styled ones that match the theme color
+    return content.replace(
+      /^(\s*)[•·]\s(.+)$/gm, 
+      `$1<span class="font-bold" style="color: var(--theme-color)">•</span> $2`
+    );
+  };
+
+  const displayValue = useMemo(() => {
+    const contentToProcess = value || content || '';
+    
+    if (propMultiline || isMultiline) {
+      // Process the content to enhance bullet points
+      const processed = processContent(contentToProcess);
+      return (
+        <div 
+          className={`whitespace-pre-wrap ${className}`} 
+          dangerouslySetInnerHTML={{ __html: processed }}
+        />
+      );
+    }
+    return <div className={className}>{contentToProcess}</div>;
+  }, [value, content, propMultiline, isMultiline, className]);
+
+  useEffect(() => {
+    // Add a style tag to the document head for bullet point styling
+    const styleTag = document.createElement('style');
+    styleTag.innerHTML = `
+      @media print {
+        .resume-content span[style*="color: var(--theme-color)"] {
+          color: var(--theme-color) !important;
+          font-weight: bold !important;
+        }
+      }
+    `;
+    document.head.appendChild(styleTag);
+    
+    return () => {
+      document.head.removeChild(styleTag);
+    };
+  }, []);
 
   if (type === "photo") {
     return (
@@ -170,11 +214,11 @@ const EditableField: React.FC<EditableFieldProps> = ({
 
   return (
     <div
-      onClick={() => setIsEditing(true)}
-      className={`cursor-text p-2 rounded-md hover:bg-gray-50 ${className}`}
+      onClick={() => isEditable && setIsEditing(true)}
+      className={`${isEditable ? 'cursor-text hover:bg-gray-50' : ''} p-2 rounded-md ${className}`}
       style={style}
     >
-      {content || <span className="text-gray-400">{placeholder}</span>}
+      {displayValue || <span className="text-gray-400">{placeholder}</span>}
     </div>
   );
 };

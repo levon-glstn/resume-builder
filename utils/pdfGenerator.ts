@@ -310,6 +310,29 @@ export async function generatePDF(resumeElement: HTMLElement): Promise<void> {
     clonedElement.style.padding = '10mm';
     clonedElement.style.boxSizing = 'border-box';
 
+    // Adjust heading sizes based on the font size
+    const baseFontSize = parseFloat(styles.fontSize);
+    if (!isNaN(baseFontSize)) {
+      // Adjust heading sizes proportionally
+      const nameElement = clonedElement.querySelector('.name');
+      if (nameElement instanceof HTMLElement) {
+        nameElement.style.fontSize = `${Math.round(baseFontSize * 2.5)}px`;
+      }
+      
+      const titleElement = clonedElement.querySelector('.title');
+      if (titleElement instanceof HTMLElement) {
+        titleElement.style.fontSize = `${Math.round(baseFontSize * 1.25)}px`;
+      }
+      
+      // Adjust section headers
+      const sectionHeaders = clonedElement.querySelectorAll('h2, h3');
+      sectionHeaders.forEach(header => {
+        if (header instanceof HTMLElement) {
+          header.style.fontSize = `${Math.round(baseFontSize * 1.5)}px`;
+        }
+      });
+    }
+
     // Wait for fonts and images
     await waitForFonts();
     convertSvgIconsToImages(clonedElement);
@@ -361,17 +384,17 @@ export async function generatePDF(resumeElement: HTMLElement): Promise<void> {
     
     if (canvasAspectRatio > pdfAspectRatio) {
       // Canvas is wider than PDF, fit to width
-      finalWidth = pdfWidth;
-      finalHeight = pdfWidth / canvasAspectRatio;
+      finalWidth = pdfWidth - 20; // Leave 10mm margin on each side
+      finalHeight = (pdfWidth - 20) / canvasAspectRatio;
     } else {
       // Canvas is taller than PDF, fit to height
-      finalHeight = pdfHeight;
-      finalWidth = pdfHeight * canvasAspectRatio;
+      finalHeight = pdfHeight - 20; // Leave 10mm margin on top and bottom
+      finalWidth = (pdfHeight - 20) * canvasAspectRatio;
     }
     
-    // Center the image on the page with smaller margins
-    const xOffset = Math.max((pdfWidth - finalWidth) / 2, 5); // Minimum 5mm margin
-    const yOffset = Math.max((pdfHeight - finalHeight) / 2, 5); // Minimum 5mm margin
+    // Center the image on the page
+    const xOffset = (pdfWidth - finalWidth) / 2;
+    const yOffset = (pdfHeight - finalHeight) / 2;
 
     // Add canvas to PDF with proper dimensions to prevent stretching
     pdf.addImage(canvas, 'JPEG', xOffset, yOffset, finalWidth, finalHeight);

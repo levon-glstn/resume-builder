@@ -30,6 +30,7 @@ interface EditorProps {
   activeSections: Record<string, boolean>;
   primaryColor: string;
   fontFamily: string;
+  fontSize?: string;
 }
 
 interface SectionData {
@@ -287,7 +288,8 @@ const Editor = forwardRef<HTMLElement, EditorProps>(({
   onContentChange,
   activeSections,
   primaryColor,
-  fontFamily
+  fontFamily,
+  fontSize = 'medium'
 }, ref) => {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [imagePosition, setImagePosition] = useState({ y: 0 });
@@ -477,6 +479,19 @@ const Editor = forwardRef<HTMLElement, EditorProps>(({
 
   console.log('Photo section active:', activeSections['contact.photo']);
 
+  // Get font size in pixels based on the selected size
+  const getFontSizeInPixels = () => {
+    switch (fontSize) {
+      case 'small':
+        return '14px';
+      case 'large':
+        return '18px';
+      case 'medium':
+      default:
+        return '16px';
+    }
+  };
+
   return (
     <article 
       ref={ref} 
@@ -488,6 +503,7 @@ const Editor = forwardRef<HTMLElement, EditorProps>(({
         margin: '0 auto',
         boxSizing: 'border-box',
         fontFamily: fontFamily,
+        fontSize: getFontSizeInPixels(),
       }}
     >
       {/* Header */}

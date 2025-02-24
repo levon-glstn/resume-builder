@@ -11,7 +11,8 @@ const STORAGE_KEYS = {
   RESUME_CONTENT: 'resumeContent',
   ACTIVE_SECTIONS: 'activeSections',
   PRIMARY_COLOR: 'primaryColor',
-  FONT_FAMILY: 'fontFamily'
+  FONT_FAMILY: 'fontFamily',
+  FONT_SIZE: 'fontSize'
 } as const;
 
 // Default content for the resume
@@ -64,6 +65,7 @@ export default function EditorPage() {
   const [content, setContent] = useState<ResumeContent>(defaultContent);
   const [primaryColor, setPrimaryColor] = useState('#4338ca');
   const [fontFamily, setFontFamily] = useState('Poppins');
+  const [fontSize, setFontSize] = useState('medium');
   const [activeSections, setActiveSections] = useState<Record<string, boolean>>({
     experience: true,
     education: true,
@@ -86,6 +88,7 @@ export default function EditorPage() {
     const savedColor = localStorage.getItem(STORAGE_KEYS.PRIMARY_COLOR);
     const savedSections = localStorage.getItem(STORAGE_KEYS.ACTIVE_SECTIONS);
     const savedFont = localStorage.getItem(STORAGE_KEYS.FONT_FAMILY);
+    const savedFontSize = localStorage.getItem(STORAGE_KEYS.FONT_SIZE);
 
     if (savedContent) {
       setContent(JSON.parse(savedContent));
@@ -98,6 +101,9 @@ export default function EditorPage() {
     }
     if (savedFont) {
       setFontFamily(savedFont);
+    }
+    if (savedFontSize) {
+      setFontSize(savedFontSize);
     }
   }, []);
 
@@ -121,6 +127,10 @@ export default function EditorPage() {
     localStorage.setItem(STORAGE_KEYS.FONT_FAMILY, fontFamily);
   }, [fontFamily]);
 
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEYS.FONT_SIZE, fontSize);
+  }, [fontSize]);
+
   const handleNewResume = () => {
     if (window.confirm('Are you sure you want to start a new resume? This will clear all current data.')) {
       setContent(defaultContent);
@@ -139,6 +149,7 @@ export default function EditorPage() {
       });
       setPrimaryColor('#4338ca');
       setFontFamily('Poppins');
+      setFontSize('medium');
     }
   };
 
@@ -161,6 +172,8 @@ export default function EditorPage() {
         resumeRef={resumeRef}
         fontFamily={fontFamily}
         onFontChange={setFontFamily}
+        fontSize={fontSize}
+        onFontSizeChange={setFontSize}
       />
       <main className="flex-1 overflow-auto py-8">
         <div className="mx-auto" style={{ maxWidth: 'calc(210mm + 2rem)' }}>
@@ -171,6 +184,7 @@ export default function EditorPage() {
             activeSections={activeSections}
             primaryColor={primaryColor}
             fontFamily={fontFamily}
+            fontSize={fontSize}
           />
         </div>
       </main>

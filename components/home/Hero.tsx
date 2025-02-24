@@ -72,7 +72,7 @@ export default function Hero() {
             <div className="relative w-full h-[300px] sm:h-[400px] lg:h-[600px] rounded-lg overflow-hidden shadow-2xl transform rotate-2 hover:rotate-0 transition-transform duration-300">
               <div className="absolute inset-0 bg-gradient-to-br from-primary-500/10 to-secondary-500/10 z-10" />
               <Image
-                src="/images/hero-template.png"
+                src="/images/hero-img.png"
                 alt="Professional Resume Template"
                 fill
                 className="object-cover"

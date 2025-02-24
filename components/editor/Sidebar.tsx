@@ -22,6 +22,7 @@ import {
 import { HiOutlineDocumentText } from 'react-icons/hi';
 import { FaLinkedin } from 'react-icons/fa';
 import { generatePDF } from '@/utils/pdfGenerator';
+import { ChevronDown } from 'lucide-react';
 
 const colors = [
   '#4338ca', // Indigo
@@ -42,6 +43,13 @@ const fonts = [
   { name: 'Open Sans', value: 'Open Sans, sans-serif' },
 ];
 
+// Define font sizes
+const fontSizes = [
+  { name: 'Small', value: 'small' },
+  { name: 'Medium', value: 'medium' },
+  { name: 'Large', value: 'large' },
+];
+
 interface SidebarProps {
   primaryColor: string;
   activeSections: Record<string, boolean>;
@@ -52,6 +60,8 @@ interface SidebarProps {
   resumeRef: React.RefObject<HTMLElement>;
   fontFamily: string;
   onFontChange: (font: string) => void;
+  fontSize?: string;
+  onFontSizeChange?: (size: string) => void;
 }
 
 export default function Sidebar({
@@ -63,11 +73,16 @@ export default function Sidebar({
   defaultContent,
   resumeRef,
   fontFamily,
-  onFontChange
+  onFontChange,
+  fontSize = 'medium',
+  onFontSizeChange
 }: SidebarProps) {
   const [isCollapsed, setIsCollapsed] = React.useState(false);
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
   const [selectedColor, setSelectedColor] = useState<string | null>(null);
+  const [fontDropdownOpen, setFontDropdownOpen] = useState(false);
+  const [sizeDropdownOpen, setSizeDropdownOpen] = useState(false);
+  const [selectedFontSize, setSelectedFontSize] = useState(fontSize);
 
   useEffect(() => {
     // Set the selected color after component mounts
@@ -100,6 +115,13 @@ export default function Sidebar({
     { id: 'linkedin', icon: <FaLinkedin className="w-4 h-4" />, label: 'LinkedIn' },
     { id: 'url', icon: <HiOutlineGlobeAlt className="w-4 h-4" />, label: 'Website' },
   ];
+
+  const handleFontSizeChange = (size: string) => {
+    setSelectedFontSize(size);
+    if (onFontSizeChange) {
+      onFontSizeChange(size);
+    }
+  };
 
   return (
     <div className="relative">
@@ -178,24 +200,73 @@ export default function Sidebar({
               {/* Font Selector */}
               <div className="space-y-2">
                 <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
-                  <HiOutlineDocumentText className="w-5 h-5" />
-                  Font Family
+                  <HiDocumentText className="w-5 h-5" />
+                  Font
                 </label>
-                <div className="space-y-2">
-                  {fonts.map((font) => (
-                    <button
-                      key={font.name}
-                      className={`w-full text-left px-3 py-2 rounded-md text-sm transition-colors ${
-                        fontFamily === font.value 
-                          ? 'bg-primary-100 text-primary-700' 
-                          : 'bg-gray-50 hover:bg-gray-100'
-                      }`}
-                      onClick={() => onFontChange(font.value)}
-                      style={{ fontFamily: font.value }}
-                    >
-                      {font.name}
-                    </button>
-                  ))}
+                <div className="relative">
+                  <button 
+                    className="w-full flex items-center justify-between border rounded-md p-2 bg-white"
+                    onClick={() => setFontDropdownOpen(!fontDropdownOpen)}
+                  >
+                    <span style={{ fontFamily: fontFamily }}>
+                      {fonts.find(f => f.value === fontFamily)?.name || fontFamily}
+                    </span>
+                    <ChevronDown size={16} />
+                  </button>
+                  
+                  {fontDropdownOpen && (
+                    <div className="absolute z-10 mt-1 w-full bg-white border rounded-md shadow-lg">
+                      {fonts.map((font) => (
+                        <button
+                          key={font.value}
+                          className={`w-full text-left p-2 hover:bg-gray-100 ${fontFamily === font.value ? 'bg-gray-100' : ''}`}
+                          style={{ fontFamily: font.value }}
+                          onClick={() => {
+                            onFontChange(font.value);
+                            setFontDropdownOpen(false);
+                          }}
+                        >
+                          {font.name}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Font Size Selector */}
+              <div className="space-y-2">
+                <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                  <HiDocumentText className="w-5 h-5" />
+                  Font Size
+                </label>
+                <div className="relative">
+                  <button 
+                    className="w-full flex items-center justify-between border rounded-md p-2 bg-white"
+                    onClick={() => setSizeDropdownOpen(!sizeDropdownOpen)}
+                  >
+                    <span>
+                      {fontSizes.find(s => s.value === selectedFontSize)?.name || 'Medium'}
+                    </span>
+                    <ChevronDown size={16} />
+                  </button>
+                  
+                  {sizeDropdownOpen && (
+                    <div className="absolute z-10 mt-1 w-full bg-white border rounded-md shadow-lg">
+                      {fontSizes.map((size) => (
+                        <button
+                          key={size.value}
+                          className={`w-full text-left p-2 hover:bg-gray-100 ${selectedFontSize === size.value ? 'bg-gray-100' : ''}`}
+                          onClick={() => {
+                            handleFontSizeChange(size.value);
+                            setSizeDropdownOpen(false);
+                          }}
+                        >
+                          {size.name}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
 

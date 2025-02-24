@@ -1,3 +1,6 @@
+'use client';
+
+import { useState, useEffect } from 'react';
 import Navbar from '@/components/layout/Navbar';
 import Hero from '@/components/home/Hero';
 import HowItWorks from '@/components/home/HowItWorks';
@@ -6,7 +9,6 @@ import Templates from '@/components/home/Templates';
 import Testimonials from '@/components/home/Testimonials';
 import FAQ from '@/components/home/FAQ';
 import EditableField from '@/components/editor/EditableField';
-import { Switch } from '@/components/ui/switch';
 
 const defaultActiveSections = {
   phone: true,
@@ -19,6 +21,35 @@ const defaultActiveSections = {
 };
 
 export default function Home() {
+  const [settings, setSettings] = useState({
+    fontSize: 'medium'
+  });
+
+  useEffect(() => {
+    if (settings.fontSize) {
+      const root = document.documentElement;
+      
+      // Set base font size variables
+      switch(settings.fontSize) {
+        case 'small':
+          root.style.setProperty('--base-font-size', '0.875rem'); // 14px
+          root.style.setProperty('--heading-font-size', '1.25rem'); // 20px
+          root.style.setProperty('--subheading-font-size', '1rem'); // 16px
+          break;
+        case 'large':
+          root.style.setProperty('--base-font-size', '1.125rem'); // 18px
+          root.style.setProperty('--heading-font-size', '1.75rem'); // 28px
+          root.style.setProperty('--subheading-font-size', '1.375rem'); // 22px
+          break;
+        default: // medium
+          root.style.setProperty('--base-font-size', '1rem'); // 16px
+          root.style.setProperty('--heading-font-size', '1.5rem'); // 24px
+          root.style.setProperty('--subheading-font-size', '1.25rem'); // 20px
+          break;
+      }
+    }
+  }, [settings.fontSize]);
+
   return (
     <main className="min-h-screen bg-gradient-to-br from-primary-50 to-secondary-50">
       <Navbar />

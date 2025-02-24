@@ -1,3 +1,5 @@
+import React from 'react';
+
 // Add these CSS classes to your Resume component
 const resumeStyles = {
   container: `
@@ -11,8 +13,16 @@ const resumeStyles = {
   `
 };
 
-// Make sure to apply these classes to the appropriate elements in your Resume component
-// For example:
-<h1 className={resumeStyles.heading}>...</h1>
-<h2 className={resumeStyles.subheading}>...</h2>
-<div className={resumeStyles.container}>...</div> 
+// Resume component with proper structure
+const Resume: React.FC = () => {
+  return (
+    <div className={resumeStyles.container}>
+      {/* Example usage of the styles */}
+      <h1 className={resumeStyles.heading}>Your Name</h1>
+      <h2 className={resumeStyles.subheading}>Your Title</h2>
+      {/* Add your resume content here */}
+    </div>
+  );
+};
+
+export default Resume; 

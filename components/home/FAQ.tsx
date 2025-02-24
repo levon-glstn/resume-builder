@@ -14,20 +14,16 @@ const faqs = [
     answer: "Yes, absolutely! We take data privacy seriously. Your information is encrypted and never shared with third parties. You can delete your data at any time."
   },
   {
-    question: "Can I download my resume in different formats? 📄",
-    answer: "Yes! You can download your resume in PDF, Word (docx), and plain text formats. All our templates are optimized for ATS (Applicant Tracking Systems)."
-  },
-  {
     question: "Do you offer multiple templates? 🎨",
     answer: "Yes, we offer a wide variety of professional templates suitable for different industries and career levels. All templates are customizable to match your preferences."
   },
   {
     question: "Is it free to use? 💰",
-    answer: "We offer both free and premium plans. You can create and download a basic resume for free. Premium features include advanced templates, AI suggestions, and multiple format downloads."
+    answer: "Yes! Our resume builder is completely free to use. You can create and customize your resume with all available features."
   },
   {
     question: "Can I edit my resume after saving? ✏️",
-    answer: "Yes! You can edit your resume anytime. Your changes are saved automatically, and you can download an updated version whenever you need it."
+    answer: "Yes! You can edit your resume anytime. Your changes are saved automatically so you never lose your progress."
   }
 ];
 

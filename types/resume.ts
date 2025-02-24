@@ -21,6 +21,7 @@ export interface Contact {
   email: string;
   phone: string;
   location: string;
+  linkedin?: string;
   url?: string;
 }
 
@@ -79,4 +80,5 @@ export interface ResumeContent {
   languages?: Language[];
   certifications?: Certification[];
   publications?: Publication[];
+  sections?: Record<string, string>;
 } 

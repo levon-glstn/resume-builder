@@ -14,8 +14,16 @@ const rubik = Rubik({
 
 export const metadata: Metadata = {
   title: "Resume Builder - Create Professional Resumes in Minutes",
-  description: "Build your professional resume with our easy-to-use, modern resume builder. Create, customize, and download your resume in minutes.",
+  description: "Build your professional resume with our easy-to-use, modern resume builder. Create and customize your resume with beautiful templates and styling options.",
   keywords: "resume builder, cv maker, professional resume, job application, career tools",
+  icons: {
+    icon: [
+      {
+        url: '/favicon.ico',
+        sizes: 'any',
+      },
+    ],
+  },
 };
 
 export default function RootLayout({
@@ -25,6 +33,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={rubik.className}>
+      <head>
+        <link rel="icon" href="/favicon.ico" sizes="any" />
+      </head>
       <body>
         {children}
         <SpeedInsights />

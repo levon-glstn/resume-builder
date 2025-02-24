@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { HiOutlineClipboardList, HiOutlineTemplate, HiOutlineDownload } from 'react-icons/hi';
+import { HiOutlineClipboardList, HiOutlineTemplate, HiOutlinePencil } from 'react-icons/hi';
 
 const steps = [
   {
@@ -19,9 +19,9 @@ const steps = [
     color: "from-secondary-500 to-secondary-600"
   },
   {
-    icon: <HiOutlineDownload className="w-8 h-8" />,
-    title: "Download & Apply",
-    description: "Download your polished resume in multiple formats (PDF, Word, TXT). Apply with confidence to your dream job!",
+    icon: <HiOutlinePencil className="w-8 h-8" />,
+    title: "Customize & Perfect",
+    description: "Fine-tune your resume with our styling options. Make it uniquely yours with custom colors and fonts.",
     tag: "Step 3",
     color: "from-primary-600 to-secondary-600"
   }

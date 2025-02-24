@@ -9,7 +9,8 @@ import {
   HiOutlineDocumentText,
   HiOutlineColorSwatch,
   HiOutlineTemplate,
-  HiDownload
+  HiMenu,
+  HiX
 } from 'react-icons/hi';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -18,9 +19,9 @@ import React from 'react';
 
 // Move these outside component to prevent recreation
 const fontSizes = [
-  { name: 'Small', value: 'small', displayText: 'Small', icon: '🔽' },
-  { name: 'Medium', value: 'medium', displayText: 'Medium', icon: '➡️' },
-  { name: 'Large', value: 'large', displayText: 'Large', icon: '🔼' }
+  { name: 'Small', value: '14px' },
+  { name: 'Medium', value: '16px' },
+  { name: 'Large', value: '18px' }
 ];
 
 const colors = [
@@ -32,24 +33,20 @@ const colors = [
 ];
 
 const sections = [
-  { name: 'Phone', id: 'phone', icon: '📱' },
-  { name: 'Email', id: 'email', icon: '📧' },
-  { name: 'Location', id: 'location', icon: '📍' },
-  { name: 'Website', id: 'url', icon: '🔗' },
+  { name: 'Summary', id: 'summary', icon: '📝' },
+  { name: 'Experience', id: 'experience', icon: '💼' },
+  { name: 'Education', id: 'education', icon: '🎓' },
+  { name: 'Skills', id: 'skills', icon: '🛠️' },
   { name: 'Projects', id: 'projects', icon: '🚀' },
-  { name: 'Languages', id: 'languages', icon: '🌐' },
-  { name: 'Certifications', id: 'certifications', icon: '📜' }
+  { name: 'Languages', id: 'languages', icon: '🌐' }
 ];
 
 interface StyleToolbarProps {
-  selectedFont: string;
-  selectedFontSize: string;
-  primaryColor: string;
+  font: string;
+  fontSize: string;
   activeSections: Record<string, boolean>;
-  content: ResumeContent;
   onFontChange: (font: string) => Promise<void>;
   onFontSizeChange: (size: string) => void;
-  onColorChange: (color: string, bgGradient: string) => void;
   onSectionToggle: (sectionId: string, isActive: boolean) => void;
 }
 
@@ -172,14 +169,11 @@ const sectionTemplates = {
 } as const;
 
 export default React.memo(function StyleToolbar({
-  selectedFont,
-  selectedFontSize,
-  primaryColor,
+  font,
+  fontSize,
   activeSections,
-  content,
   onFontChange,
   onFontSizeChange,
-  onColorChange,
   onSectionToggle
 }: StyleToolbarProps) {
   const [menuState, setMenuState] = useState<MenuState>({
@@ -187,6 +181,7 @@ export default React.memo(function StyleToolbar({
     color: false,
     sections: false
   });
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const closeAllMenus = useCallback(() => {
     setMenuState({
@@ -206,61 +201,8 @@ export default React.memo(function StyleToolbar({
   }, []);
 
   const handleSectionToggleInternal = useCallback((sectionId: string, isActive: boolean) => {
-    // First, call the parent's onSectionToggle to update the UI state
     onSectionToggle(sectionId, isActive);
-    
-    // Create a new content object with the updated section
-    const updatedContent = { ...content };
-    
-    if (isActive) {
-      // Add section with template data
-      switch(sectionId) {
-        case 'projects':
-          updatedContent.projects = [{ title: 'Project Name', description: 'Project Description', period: 'Duration' }];
-          break;
-        case 'awards':
-          updatedContent.awards = [{ title: 'Award Name', issuer: 'Issuer', date: 'Date', description: 'Description' }];
-          break;
-        case 'volunteer':
-          updatedContent.volunteer = [{ role: 'Role', organization: 'Organization', period: 'Duration', description: 'Description' }];
-          break;
-        case 'languages':
-          updatedContent.languages = [{ name: 'Language', proficiency: 'Proficiency Level' }];
-          break;
-        case 'certifications':
-          updatedContent.certifications = [{ name: 'Certification Name', issuer: 'Issuer' }];
-          break;
-        case 'publications':
-          updatedContent.publications = [{ title: 'Publication Title', publisher: 'Publisher', date: 'Date' }];
-          break;
-      }
-    } else {
-      // Remove section data
-      switch(sectionId) {
-        case 'projects':
-          delete updatedContent.projects;
-          break;
-        case 'awards':
-          delete updatedContent.awards;
-          break;
-        case 'volunteer':
-          delete updatedContent.volunteer;
-          break;
-        case 'languages':
-          delete updatedContent.languages;
-          break;
-        case 'certifications':
-          delete updatedContent.certifications;
-          break;
-        case 'publications':
-          delete updatedContent.publications;
-          break;
-      }
-    }
-
-    // Update the content reference
-    Object.assign(content, updatedContent);
-  }, [content, onSectionToggle]);
+  }, [onSectionToggle]);
 
   // Memoized render functions for each dropdown
   const renderFontSizeItems = useMemo(() => (
@@ -269,18 +211,18 @@ export default React.memo(function StyleToolbar({
         {({ active }) => (
           <DropdownItem
             active={active}
-            selected={selectedFontSize === size.value}
+            selected={fontSize === size.value}
             onClick={() => {
               onFontSizeChange(size.value);
               closeAllMenus();
             }}
-            icon={size.icon}
+            icon={size.name}
             text={size.name}
           />
         )}
       </Menu.Item>
     ))
-  ), [selectedFontSize, onFontSizeChange, closeAllMenus]);
+  ), [fontSize, onFontSizeChange, closeAllMenus]);
 
   const renderColorItems = useMemo(() => (
     colors.map((color) => (
@@ -288,9 +230,9 @@ export default React.memo(function StyleToolbar({
         {({ active }) => (
           <DropdownItem
             active={active}
-            selected={primaryColor === color.value}
+            selected={font === color.value}
             onClick={() => {
-              onColorChange(color.value, color.bgGradient);
+              onFontChange(color.value);
               closeAllMenus();
             }}
             color={color.value}
@@ -299,7 +241,7 @@ export default React.memo(function StyleToolbar({
         )}
       </Menu.Item>
     ))
-  ), [primaryColor, onColorChange, closeAllMenus]);
+  ), [font, onFontChange, closeAllMenus]);
 
   const renderSectionItems = useMemo(() => (
     sections.map((section) => (
@@ -331,63 +273,87 @@ export default React.memo(function StyleToolbar({
   ), [activeSections, handleSectionToggleInternal]);
 
   return (
-    <div className="bg-white border-b border-gray-200 sticky top-0 z-50 shadow-md backdrop-blur-sm bg-white/90">
-      <div className="max-w-7xl mx-auto px-4 py-3">
-        <div className="flex items-center justify-between h-14">
-          {/* Logo section with Link */}
-          <div className="flex items-center">
-            <Link href="/" className="text-[1.5rem] font-bold bg-gradient-to-r from-primary-600 to-secondary-600 bg-clip-text text-transparent hover:opacity-80 transition-opacity">
-              ResumeCraft
-            </Link>
-          </div>
+    <div className="sticky top-0 z-50 bg-white border-b border-gray-200 px-4 py-2">
+      <div className="flex items-center justify-between max-w-7xl mx-auto">
+        <div className="flex items-center space-x-4">
+          {/* Font Size Dropdown */}
+          <DropdownMenu
+            isOpen={menuState.size}
+            onClose={closeAllMenus}
+            button={
+              <DropdownButton
+                icon={<HiOutlineDocumentText className="w-4 h-4" />}
+                text={fontSize}
+                onClick={() => toggleMenu('size')}
+              />
+            }
+            items={renderFontSizeItems}
+          />
 
-          {/* Toolbar Items */}
-          <div className="flex items-center space-x-1.5">
-            {/* Font Size Dropdown */}
-            <DropdownMenu
-              isOpen={menuState.size}
-              onClose={closeAllMenus}
-              button={
-                <DropdownButton
-                  icon={<HiOutlineTemplate className="w-3.5 h-3.5" />}
-                  text={fontSizes.find(size => size.value === selectedFontSize)?.displayText || 'Medium'}
-                  onClick={() => toggleMenu('size')}
-                />
-              }
-              items={renderFontSizeItems}
-            />
+          {/* Color Picker Dropdown */}
+          <DropdownMenu
+            isOpen={menuState.color}
+            onClose={closeAllMenus}
+            button={
+              <DropdownButton
+                icon={<HiOutlineColorSwatch className="w-4 h-4" />}
+                color={font}
+                onClick={() => toggleMenu('color')}
+              />
+            }
+            items={renderColorItems}
+          />
 
-            {/* Color Picker */}
-            <DropdownMenu
-              isOpen={menuState.color}
-              onClose={closeAllMenus}
-              button={
-                <DropdownButton
-                  icon={<HiOutlineColorSwatch className="w-3.5 h-3.5" />}
-                  color={primaryColor}
-                  onClick={() => toggleMenu('color')}
-                />
-              }
-              items={renderColorItems}
-            />
+          {/* Sections Dropdown */}
+          <DropdownMenu
+            isOpen={menuState.sections}
+            onClose={closeAllMenus}
+            button={
+              <DropdownButton
+                icon={<HiOutlineTemplate className="w-4 h-4" />}
+                text="Sections"
+                onClick={() => toggleMenu('sections')}
+              />
+            }
+            items={renderSectionItems}
+            width="w-64"
+          />
+        </div>
 
-            {/* Sections Dropdown */}
-            <DropdownMenu
-              isOpen={menuState.sections}
-              onClose={closeAllMenus}
-              button={
-                <DropdownButton
-                  icon={<HiOutlineTemplate className="w-3.5 h-3.5" />}
-                  text="Sections"
-                  onClick={() => toggleMenu('sections')}
-                />
-              }
-              items={renderSectionItems}
-              width="w-64"
-            />
+        {/* Mobile Menu Button */}
+        <button
+          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+          className="md:hidden p-2 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+        >
+          {isMobileMenuOpen ? (
+            <HiX className="w-6 h-6" />
+          ) : (
+            <HiMenu className="w-6 h-6" />
+          )}
+        </button>
+      </div>
+
+      {/* Mobile Menu */}
+      {isMobileMenuOpen && (
+        <div className="md:hidden mt-2 space-y-2 p-2">
+          <div className="flex flex-wrap gap-2">
+            {sections.map((section) => (
+              <button
+                key={section.id}
+                onClick={() => onSectionToggle(section.id, !activeSections[section.id])}
+                className={`flex items-center space-x-1 rounded-md px-2 py-1 text-sm ${
+                  activeSections[section.id]
+                    ? 'bg-primary-600 text-white'
+                    : 'bg-gray-100 text-gray-700'
+                }`}
+              >
+                <span>{section.icon}</span>
+                <span>{section.name}</span>
+              </button>
+            ))}
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }); 

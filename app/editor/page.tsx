@@ -1,106 +1,164 @@
 'use client';
 
-import { useState } from 'react';
-import Editor from '@/components/editor/Editor';
-import StyleToolbar from '@/components/editor/StyleToolbar';
-import type { ResumeContent } from '@/types/resume';
+import { useState, useRef, useEffect } from 'react';
+import Editor from '../../components/editor/Editor';
+import Sidebar from '../../components/editor/Sidebar';
+import type { ResumeContent } from '../../types/resume';
+
+// Storage keys
+const STORAGE_KEYS = {
+  RESUME_CONTENT: 'resumeContent',
+  ACTIVE_SECTIONS: 'activeSections',
+  PRIMARY_COLOR: 'primaryColor'
+} as const;
 
 // Default content for the resume
 const defaultContent: ResumeContent = {
-  name: 'Your Name',
-  title: 'Professional Title',
+  name: 'Jonathan Smith',
+  title: 'Senior Web Developer',
   contact: {
-    email: 'email@example.com',
+    email: 'jonathansmith@gmail.com',
     phone: '(555) 123-4567',
-    location: 'City, State'
+    location: 'San Francisco, CA',
+    linkedin: 'linkedin.com/in/jonathan-smith'
   },
-  summary: 'Click to add a professional summary that highlights your key achievements and career objectives.',
+  summary: 'Experienced web developer with a strong background in full-stack development and a passion for creating efficient, scalable applications. Proven track record of delivering high-quality solutions and leading development teams.',
   experience: [
     {
-      title: 'Job Title',
-      company: 'Company Name',
-      location: 'City, State',
-      startDate: 'MM/YYYY',
+      title: 'Senior Web Developer',
+      company: 'TechCorp Inc.',
+      location: 'San Francisco, CA',
+      startDate: '2021',
       endDate: 'Present',
-      description: '• Click to describe your role, responsibilities, and key achievements.'
+      description: '• Responsibilities and achievements.\n• Responsibilities and achievements.'
     }
   ],
   education: [
     {
-      degree: 'Degree Name',
-      school: 'School Name',
-      location: 'City, State',
-      startDate: 'MM/YYYY',
-      endDate: 'MM/YYYY',
-      details: 'Additional details about your education'
+      degree: 'BSc Computer Science',
+      school: 'University of California',
+      location: 'Berkeley, CA',
+      startDate: '2016',
+      endDate: '2020',
+      details: 'Major in Software Engineering, Minor in AI'
     }
   ],
-  skills: ['Skill 1', 'Skill 2', 'Skill 3'],
-  projects: [{ 
-    title: 'Project Name', 
-    description: 'Project Description', 
-    period: 'Duration' 
-  }],
-  languages: [{ 
-    name: 'Language', 
-    proficiency: 'Proficiency Level' 
-  }]
+  skills: ['React', 'TypeScript', 'Node.js', 'Python', 'AWS', 'Docker'],
+  projects: [
+    {
+      title: 'E-commerce Platform',
+      description: 'Built a scalable e-commerce platform using React and Node.js',
+      period: '2022'
+    }
+  ],
+  languages: [
+    { name: 'English', proficiency: 'Native' },
+    { name: 'Spanish', proficiency: 'Fluent' },
+    { name: 'French', proficiency: 'Intermediate' }
+  ]
 };
 
 export default function EditorPage() {
   const [content, setContent] = useState<ResumeContent>(defaultContent);
-  const [selectedFont, setSelectedFont] = useState('Rubik');
-  const [selectedFontSize, setSelectedFontSize] = useState('medium');
   const [primaryColor, setPrimaryColor] = useState('#4338ca');
   const [activeSections, setActiveSections] = useState<Record<string, boolean>>({
-    phone: true,
-    email: true,
-    location: true,
-    url: true,
+    experience: true,
+    education: true,
     projects: true,
+    skills: true,
     languages: true,
-    certifications: true
+    'contact.photo': true,
+    'contact.email': true,
+    'contact.phone': true,
+    'contact.location': true,
+    'contact.linkedin': false,
+    'contact.url': false,
   });
 
-  const handleFontChange = async (font: string) => {
-    setSelectedFont(font);
-  };
+  const resumeRef = useRef<HTMLElement>(null);
 
-  const handleFontSizeChange = (size: string) => {
-    setSelectedFontSize(size);
+  // Load saved data after component mounts
+  useEffect(() => {
+    const savedContent = localStorage.getItem(STORAGE_KEYS.RESUME_CONTENT);
+    const savedColor = localStorage.getItem(STORAGE_KEYS.PRIMARY_COLOR);
+    const savedSections = localStorage.getItem(STORAGE_KEYS.ACTIVE_SECTIONS);
+
+    if (savedContent) {
+      setContent(JSON.parse(savedContent));
+    }
+    if (savedColor) {
+      setPrimaryColor(savedColor);
+    }
+    if (savedSections) {
+      setActiveSections(JSON.parse(savedSections));
+    }
+  }, []);
+
+  // Save data to localStorage whenever it changes
+  useEffect(() => {
+    const saveTimeout = setTimeout(() => {
+      localStorage.setItem(STORAGE_KEYS.RESUME_CONTENT, JSON.stringify(content));
+    }, 500);
+    return () => clearTimeout(saveTimeout);
+  }, [content]);
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEYS.ACTIVE_SECTIONS, JSON.stringify(activeSections));
+  }, [activeSections]);
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEYS.PRIMARY_COLOR, primaryColor);
+  }, [primaryColor]);
+
+  const handleNewResume = () => {
+    if (window.confirm('Are you sure you want to start a new resume? This will clear all current data.')) {
+      setContent(defaultContent);
+      setActiveSections({
+        experience: true,
+        education: true,
+        projects: true,
+        skills: true,
+        languages: true,
+        'contact.photo': true,
+        'contact.email': true,
+        'contact.phone': true,
+        'contact.location': true,
+        'contact.linkedin': false,
+        'contact.url': false,
+      });
+      setPrimaryColor('#4338ca');
+    }
   };
 
   const handleSectionToggle = (sectionId: string, isActive: boolean) => {
-    setActiveSections(prev => ({ ...prev, [sectionId]: isActive }));
+    setActiveSections(prev => ({
+      ...prev,
+      [sectionId]: isActive
+    }));
   };
 
   return (
-    <main className="min-h-screen" style={{ 
-      background: `linear-gradient(135deg, ${primaryColor}25, ${primaryColor}35)` 
-    }}>
-      <StyleToolbar
-        selectedFont={selectedFont}
-        selectedFontSize={selectedFontSize}
+    <div className="flex h-screen bg-gray-50">
+      <Sidebar
         primaryColor={primaryColor}
         activeSections={activeSections}
-        content={content}
-        onFontChange={handleFontChange}
-        onFontSizeChange={handleFontSizeChange}
-        onColorChange={(color) => setPrimaryColor(color)}
+        onColorChange={setPrimaryColor}
         onSectionToggle={handleSectionToggle}
+        onNewResume={handleNewResume}
+        defaultContent={defaultContent}
+        resumeRef={resumeRef}
       />
-      <div className="p-8">
-        <div className="max-w-[1100px] mx-auto bg-white rounded-lg shadow-xl">
-          <Editor 
-            content={content} 
-            setContent={setContent}
-            selectedFont={selectedFont}
-            selectedFontSize={selectedFontSize}
-            primaryColor={primaryColor}
+      <main className="flex-1 overflow-auto py-8">
+        <div className="mx-auto" style={{ maxWidth: 'calc(210mm + 2rem)' }}>
+          <Editor
+            ref={resumeRef}
+            content={content}
+            onContentChange={setContent}
             activeSections={activeSections}
+            primaryColor={primaryColor}
           />
         </div>
-      </div>
-    </main>
+      </main>
+    </div>
   );
 } 

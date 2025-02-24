@@ -495,7 +495,7 @@ const Editor = forwardRef<HTMLElement, EditorProps>(({
   return (
     <article 
       ref={ref} 
-      className="bg-white shadow-lg rounded-lg"
+      className="bg-white shadow-lg rounded-lg resume-hover-effect"
       style={{
         width: '225mm',
         minHeight: '315mm',
@@ -504,6 +504,7 @@ const Editor = forwardRef<HTMLElement, EditorProps>(({
         boxSizing: 'border-box',
         fontFamily: fontFamily,
         fontSize: getFontSizeInPixels(),
+        boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)'
       }}
     >
       {/* Header */}

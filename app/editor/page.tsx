@@ -82,6 +82,31 @@ export default function EditorPage() {
 
   const resumeRef = useRef<HTMLElement>(null);
 
+  // Generate gradient background colors based on the primary color
+  const getGradientBackground = (color: string) => {
+    // Convert hex to RGB
+    const hexToRgb = (hex: string) => {
+      const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+      return result ? {
+        r: parseInt(result[1], 16),
+        g: parseInt(result[2], 16),
+        b: parseInt(result[3], 16)
+      } : { r: 0, g: 0, b: 0 };
+    };
+
+    const rgb = hexToRgb(color);
+    
+    // Create a more dynamic gradient with multiple components for depth
+    return {
+      background: `
+        radial-gradient(circle at 30% 20%, rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.12) 0%, rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.03) 50%),
+        linear-gradient(135deg, rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.08) 0%, rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.18) 100%),
+        repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.05) 0px, rgba(255, 255, 255, 0.05) 2px, transparent 2px, transparent 4px)
+      `,
+      backgroundAttachment: 'fixed'
+    };
+  };
+
   // Load saved data after component mounts
   useEffect(() => {
     const savedContent = localStorage.getItem(STORAGE_KEYS.RESUME_CONTENT);
@@ -175,7 +200,7 @@ export default function EditorPage() {
         fontSize={fontSize}
         onFontSizeChange={setFontSize}
       />
-      <main className="flex-1 overflow-auto py-8">
+      <main className="flex-1 overflow-auto py-8 animate-gradient" style={getGradientBackground(primaryColor)}>
         <div className="mx-auto" style={{ maxWidth: 'calc(210mm + 2rem)' }}>
           <Editor
             ref={resumeRef}

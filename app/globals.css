@@ -78,6 +78,24 @@ html {
   animation: float 3s ease-in-out infinite;
 }
 
+/* Gradient background animation */
+@keyframes gradientShift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.animate-gradient {
+  animation: gradientShift 20s ease infinite;
+  background-size: 200% 200% !important;
+}
+
 /* Custom gradient backgrounds */
 .gradient-primary {
   background: linear-gradient(135deg, #0ea5e9 0%, #8b5cf6 100%);
@@ -118,4 +136,14 @@ html {
     padding-left: 4rem;
     padding-right: 4rem;
   }
+}
+
+/* Resume hover effect */
+.resume-hover-effect {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.resume-hover-effect:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04) !important;
 }

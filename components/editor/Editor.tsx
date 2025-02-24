@@ -525,7 +525,7 @@ const Editor = forwardRef<HTMLElement, EditorProps>(({
             })}
           </div>
         </div>
-        {activeSections['contact.photo'] && (
+        {activeSections['contact.photo'] && selectedImage && (
           <div className="flex-shrink-0 w-32 h-32">
             <div className="w-full h-full bg-gray-100 rounded-lg overflow-hidden">
               <input
@@ -567,7 +567,7 @@ const Editor = forwardRef<HTMLElement, EditorProps>(({
 
       {/* Summary */}
       {activeSections.summary && (
-        <div className="space-y-2 mb-6">
+        <div className="space-y-1 mb-4">
           <SectionHeader 
             title={content.sections?.summary || "Summary"}
             color={primaryColor}
@@ -584,7 +584,7 @@ const Editor = forwardRef<HTMLElement, EditorProps>(({
 
       {/* Experience */}
       {activeSections.experience && (
-        <div className="space-y-2 mb-6">
+        <div className="space-y-1 mb-4">
           <SectionHeader 
             title={content.sections?.experience || "Experience"}
             color={primaryColor}
@@ -592,7 +592,7 @@ const Editor = forwardRef<HTMLElement, EditorProps>(({
             onTitleChange={(value) => updateContent('sections.experience', value)}
           />
           {content.experience.map((exp, index) => (
-            <div key={index} className="space-y-1 relative group experience-item">
+            <div key={index} className="space-y-1 relative group experience-item mt-2">
               <button
                 onClick={() => removeExperience(index)}
                 className="absolute -right-2 -top-2 p-1 bg-white rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-opacity hover:text-red-500"
@@ -651,7 +651,7 @@ const Editor = forwardRef<HTMLElement, EditorProps>(({
 
       {/* Education */}
       {activeSections.education && (
-        <div className="space-y-2 mb-6">
+        <div className="space-y-1 mb-4">
           <SectionHeader 
             title={content.sections?.education || "Education"}
             color={primaryColor}
@@ -659,7 +659,7 @@ const Editor = forwardRef<HTMLElement, EditorProps>(({
             onTitleChange={(value) => updateContent('sections.education', value)}
           />
           {content.education.map((edu, index) => (
-            <div key={index} className="space-y-2 relative group education-item">
+            <div key={index} className="space-y-1 relative group education-item mt-2">
               <button
                 onClick={() => removeEducation(index)}
                 className="absolute -right-2 -top-2 p-1 bg-white rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-opacity hover:text-red-500"
@@ -712,14 +712,14 @@ const Editor = forwardRef<HTMLElement, EditorProps>(({
 
       {/* Skills */}
       {activeSections.skills && (
-        <div className="space-y-4 mb-6">
+        <div className="space-y-2 mb-4">
           <SectionHeader 
             title={content.sections?.skills || "Skills"}
             color={primaryColor}
             onAdd={() => addSkill('New Skill')}
             onTitleChange={(value) => updateContent('sections.skills', value)}
           />
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2 mt-1">
             {content.skills.map((skill) => (
               <Tag
                 key={skill}
@@ -739,7 +739,7 @@ const Editor = forwardRef<HTMLElement, EditorProps>(({
 
       {/* Projects */}
       {activeSections.projects && (
-        <div className="space-y-2 mb-6">
+        <div className="space-y-1 mb-4">
           <SectionHeader 
             title={content.sections?.projects || "Projects"}
             color={primaryColor}
@@ -747,7 +747,7 @@ const Editor = forwardRef<HTMLElement, EditorProps>(({
             onTitleChange={(value) => updateContent('sections.projects', value)}
           />
           {content.projects?.map((project, index) => (
-            <div key={index} className="space-y-2 relative group">
+            <div key={index} className="space-y-1 relative group mt-2">
               <button
                 onClick={() => removeProject(index)}
                 className="absolute -right-2 -top-2 p-1 bg-white rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-opacity hover:text-red-500"
@@ -786,16 +786,16 @@ const Editor = forwardRef<HTMLElement, EditorProps>(({
 
       {/* Languages */}
       {activeSections.languages && (
-        <div className="space-y-2 mb-6">
+        <div className="space-y-1 mb-4">
           <SectionHeader 
             title={content.sections?.languages || "Languages"}
             color={primaryColor}
             onAdd={addNewLanguage}
             onTitleChange={(value) => updateContent('sections.languages', value)}
           />
-          <div className="space-y-1">
+          <div className="space-y-1 mt-2">
             {content.languages?.map((lang, index) => (
-              <div key={index} className="space-y-2 relative group">
+              <div key={index} className="space-y-1 relative group">
                 <button
                   onClick={() => removeLanguage(index)}
                   className="absolute -right-2 -top-2 p-1 bg-white rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-opacity hover:text-red-500"
@@ -829,7 +829,7 @@ const Editor = forwardRef<HTMLElement, EditorProps>(({
 
       {/* Certifications */}
       {activeSections.certifications && (
-        <div className="space-y-2 mb-6">
+        <div className="space-y-1 mb-4">
           <SectionHeader 
             title={content.sections?.certifications || "Certifications"}
             color={primaryColor}
@@ -837,7 +837,7 @@ const Editor = forwardRef<HTMLElement, EditorProps>(({
             onTitleChange={(value) => updateContent('sections.certifications', value)}
           />
           {(content.certifications || []).map((cert, index) => (
-            <div key={index} className="space-y-2 relative group">
+            <div key={index} className="space-y-1 relative group mt-2">
               <button
                 onClick={() => {
                   const updatedCerts = [...(content.certifications || [])];

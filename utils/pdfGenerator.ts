@@ -17,9 +17,9 @@ const ICONS = {
 // Section spacing constants
 const SPACING = {
   AFTER_HEADER: 15,     // Space after the header section (name, title, contacts)
-  BETWEEN_SECTIONS: 25, // Space between major sections
+  BETWEEN_SECTIONS: 15, // Reduced from 25 to 15
   AFTER_SECTION_TITLE: 2, // Space after section titles (reduced from 8)
-  BETWEEN_ITEMS: 15,    // Space between items within a section
+  BETWEEN_ITEMS: 10,    // Reduced from 15 to 10
 };
 
 function drawIcon(doc: jsPDF, type: string, x: number, y: number, color: RGBColor) {

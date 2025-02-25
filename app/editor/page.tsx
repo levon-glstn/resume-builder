@@ -63,7 +63,7 @@ const defaultContent: ResumeContent = {
 
 export default function EditorPage() {
   const [content, setContent] = useState<ResumeContent>(defaultContent);
-  const [primaryColor, setPrimaryColor] = useState('#4338ca');
+  const [primaryColor, setPrimaryColor] = useState('#7c3aed');
   const [fontFamily, setFontFamily] = useState('Poppins');
   const [fontSize, setFontSize] = useState('medium');
   const [activeSections, setActiveSections] = useState<Record<string, boolean>>({

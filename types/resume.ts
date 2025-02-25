@@ -49,6 +49,7 @@ export interface Volunteer {
 export interface Language {
   name: string;
   proficiency: string;
+  level?: number;
 }
 
 export interface Certification {

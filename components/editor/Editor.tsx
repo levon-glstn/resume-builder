@@ -23,6 +23,7 @@ import "react-datepicker/dist/react-datepicker.css";
 import EditableField from './EditableField';
 import { FaLinkedin } from 'react-icons/fa';
 import { HiOutlineGlobeAlt } from 'react-icons/hi';
+import LanguageLevelSelector from './LanguageLevelSelector';
 
 interface EditorProps {
   content: ResumeContent;
@@ -191,9 +192,25 @@ interface TagProps {
   onEdit: (newValue: string) => void;
   color: string;
   className?: string;
+  onDragStart?: (e: React.DragEvent<HTMLDivElement>) => void;
+  onDragOver?: (e: React.DragEvent<HTMLDivElement>) => void;
+  onDrop?: (e: React.DragEvent<HTMLDivElement>) => void;
+  draggable?: boolean;
+  index?: number;
 }
 
-const Tag: React.FC<TagProps> = ({ tag, onRemove, onEdit, color, className }) => {
+const Tag: React.FC<TagProps> = ({ 
+  tag, 
+  onRemove, 
+  onEdit, 
+  color, 
+  className,
+  onDragStart,
+  onDragOver,
+  onDrop,
+  draggable = false,
+  index
+}) => {
   const [isEditing, setIsEditing] = useState(false);
   const [tempValue, setTempValue] = useState(tag);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -207,7 +224,7 @@ const Tag: React.FC<TagProps> = ({ tag, onRemove, onEdit, color, className }) =>
 
   const handleBlur = () => {
     setIsEditing(false);
-    if (tempValue.trim() !== tag) {
+    if (tempValue.trim() !== tag && tempValue.trim() !== '') {
       onEdit(tempValue.trim());
     }
   };
@@ -233,8 +250,13 @@ const Tag: React.FC<TagProps> = ({ tag, onRemove, onEdit, color, className }) =>
 
   return (
     <div 
-      className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-md text-sm font-medium text-white ${className}`}
+      className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-md text-sm font-medium text-white ${className} ${draggable ? 'cursor-grab active:cursor-grabbing' : ''}`}
       style={{ backgroundColor: color }}
+      draggable={draggable}
+      onDragStart={onDragStart}
+      onDragOver={onDragOver}
+      onDrop={onDrop}
+      data-index={index}
     >
       <span onClick={() => setIsEditing(true)} className="cursor-text">
         {tag}
@@ -263,11 +285,11 @@ const SectionHeader: React.FC<{
       <EditableText
         value={title.toUpperCase()}
         onChange={(value) => onTitleChange(value.toUpperCase())}
-        className="text-lg font-semibold"
-        style={{ color: color }}
+        className="font-semibold"
+        style={{ color: color, fontSize: 'var(--title-size-section)' }}
       />
     ) : (
-      <h2 className="text-lg font-semibold" style={{ color: color }}>
+      <h2 className="font-semibold" style={{ color: color, fontSize: 'var(--title-size-section)' }}>
         {title.toUpperCase()}
       </h2>
     )}
@@ -375,6 +397,35 @@ const Editor = forwardRef<HTMLElement, EditorProps>(({
     });
   };
 
+  const reorderSkills = (fromIndex: number, toIndex: number) => {
+    const newSkills = [...content.skills];
+    const [movedSkill] = newSkills.splice(fromIndex, 1);
+    newSkills.splice(toIndex, 0, movedSkill);
+    
+    onContentChange({
+      ...content,
+      skills: newSkills
+    });
+  };
+
+  const handleSkillDragStart = (e: React.DragEvent<HTMLDivElement>, index: number) => {
+    e.dataTransfer.setData('text/plain', index.toString());
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleSkillDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+  };
+
+  const handleSkillDrop = (e: React.DragEvent<HTMLDivElement>, dropIndex: number) => {
+    e.preventDefault();
+    const dragIndex = parseInt(e.dataTransfer.getData('text/plain'), 10);
+    if (dragIndex !== dropIndex) {
+      reorderSkills(dragIndex, dropIndex);
+    }
+  };
+
   const sections: SectionData[] = [
     { id: 'experience', title: 'EXPERIENCE', type: 'experience' as const, items: content.experience },
     { id: 'education', title: 'EDUCATION', type: 'education' as const, items: content.education },
@@ -447,16 +498,14 @@ const Editor = forwardRef<HTMLElement, EditorProps>(({
   };
 
   const addNewLanguage = () => {
-    onContentChange({
-      ...content,
-      languages: [
-        ...(content.languages || []),
-        {
-          name: 'Language Name',
-          proficiency: 'Proficiency Level'
-        }
-      ]
-    });
+    updateContent('languages', [
+      ...(content.languages || []),
+      {
+        name: 'Language Name',
+        proficiency: 'Proficiency Level',
+        level: 3 // Default to middle level
+      }
+    ]);
   };
 
   const removeLanguage = (index: number) => {
@@ -477,8 +526,6 @@ const Editor = forwardRef<HTMLElement, EditorProps>(({
   const allowedContactFields = ['email', 'phone', 'location', 'linkedin', 'url'] as const;
   type ContactField = typeof allowedContactFields[number];
 
-  console.log('Photo section active:', activeSections['contact.photo']);
-
   // Get font size in pixels based on the selected size
   const getFontSizeInPixels = () => {
     switch (fontSize) {
@@ -492,6 +539,36 @@ const Editor = forwardRef<HTMLElement, EditorProps>(({
     }
   };
 
+  // Get title font sizes based on the selected size
+  const getTitleFontSizes = () => {
+    switch (fontSize) {
+      case 'small':
+        return {
+          name: '28px',
+          sectionTitle: '16px',
+          jobTitle: '18px',
+          itemTitle: '15px'
+        };
+      case 'large':
+        return {
+          name: '36px',
+          sectionTitle: '22px',
+          jobTitle: '24px',
+          itemTitle: '19px'
+        };
+      case 'medium':
+      default:
+        return {
+          name: '32px',
+          sectionTitle: '18px',
+          jobTitle: '21px',
+          itemTitle: '17px'
+        };
+    }
+  };
+
+  const titleSizes = getTitleFontSizes();
+
   return (
     <article 
       ref={ref} 
@@ -504,8 +581,12 @@ const Editor = forwardRef<HTMLElement, EditorProps>(({
         boxSizing: 'border-box',
         fontFamily: fontFamily,
         fontSize: getFontSizeInPixels(),
-        boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)'
-      }}
+        boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)',
+        '--title-size-name': titleSizes.name,
+        '--title-size-section': titleSizes.sectionTitle,
+        '--title-size-job': titleSizes.jobTitle,
+        '--title-size-item': titleSizes.itemTitle
+      } as React.CSSProperties}
     >
       {/* Header */}
       <div className="flex justify-between items-start gap-8 mb-8">
@@ -515,15 +596,16 @@ const Editor = forwardRef<HTMLElement, EditorProps>(({
             onChange={(value) => updateContent('name', value)}
             className="text-4xl font-bold name"
             placeholder="Your Name"
+            style={{ fontSize: 'var(--title-size-name)' }}
           />
           <EditableText
             value={content.title}
             onChange={(value) => updateContent('title', value)}
             className="text-xl font-medium title"
-            style={{ color: '#7d7d7d' }}
+            style={{ color: '#7d7d7d', fontSize: 'var(--title-size-job)' }}
             placeholder="Professional Title"
           />
-          <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm text-gray-600 mt-2 contact">
+          <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm text-gray-600 mt-6 contact">
             {allowedContactFields.map((key) => {
               if (!activeSections[`contact.${key}`]) return null;
               const value = content.contact[key];
@@ -548,7 +630,6 @@ const Editor = forwardRef<HTMLElement, EditorProps>(({
           </div>
         </div>
         {activeSections['contact.photo'] && (
-          console.log('Rendering photo section'),
           <div className="flex-shrink-0 w-32 h-32">
             <div className="w-full h-full bg-gray-100 rounded-lg overflow-hidden">
               <input
@@ -629,6 +710,7 @@ const Editor = forwardRef<HTMLElement, EditorProps>(({
                     onChange={(value) => updateContent(`experience.${index}.title`, value)}
                     className="font-semibold title"
                     placeholder="Job Title"
+                    style={{ fontSize: 'var(--title-size-item)' }}
                   />
                   <EditableText
                     value={exp.company}
@@ -696,6 +778,7 @@ const Editor = forwardRef<HTMLElement, EditorProps>(({
                     onChange={(value) => updateContent(`education.${index}.degree`, value)}
                     className="font-semibold degree"
                     placeholder="Degree"
+                    style={{ fontSize: 'var(--title-size-item)' }}
                   />
                   <EditableText
                     value={edu.school}
@@ -739,23 +822,52 @@ const Editor = forwardRef<HTMLElement, EditorProps>(({
           <SectionHeader 
             title={content.sections?.skills || "Skills"}
             color={primaryColor}
-            onAdd={() => addSkill('New Skill')}
             onTitleChange={(value) => updateContent('sections.skills', value)}
           />
           <div className="flex flex-wrap items-center gap-2 mt-1">
-            {content.skills.map((skill) => (
+            {content.skills.map((skill, index) => (
               <Tag
-                key={skill}
+                key={`${skill}-${index}`}
                 tag={skill}
                 onRemove={() => removeSkill(skill)}
                 onEdit={(newValue) => {
-                  removeSkill(skill);
-                  addSkill(newValue);
+                  if (newValue.trim()) {
+                    removeSkill(skill);
+                    addSkill(newValue);
+                  }
                 }}
                 color={primaryColor}
                 className="skill-tag"
+                onDragStart={(e) => handleSkillDragStart(e, index)}
+                onDragOver={(e) => handleSkillDragOver(e)}
+                onDrop={(e) => handleSkillDrop(e, index)}
+                draggable={true}
+                index={index}
               />
             ))}
+            <input
+              type="text"
+              placeholder="Add skill..."
+              className="px-3 py-1 rounded-md text-sm bg-gray-50 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-opacity-50"
+              style={{ 
+                flexGrow: 0, 
+                width: 'auto',
+                minWidth: '120px',
+                maxWidth: '200px',
+                flexBasis: 'auto'
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  const input = e.target as HTMLInputElement;
+                  const value = input.value.trim();
+                  if (value) {
+                    addSkill(value);
+                    input.value = '';
+                  }
+                  e.preventDefault(); // Prevent form submission
+                }
+              }}
+            />
           </div>
         </div>
       )}
@@ -784,6 +896,7 @@ const Editor = forwardRef<HTMLElement, EditorProps>(({
                     onChange={(value) => updateContent(`projects.${index}.title`, value)}
                     className="font-semibold"
                     placeholder="Project Title"
+                    style={{ fontSize: 'var(--title-size-item)' }}
                   />
                   <EditableText
                     value={project.description}
@@ -818,28 +931,41 @@ const Editor = forwardRef<HTMLElement, EditorProps>(({
           />
           <div className="space-y-1 mt-2">
             {content.languages?.map((lang, index) => (
-              <div key={index} className="space-y-1 relative group">
+              <div 
+                key={index} 
+                className="space-y-1 relative group" 
+                data-language-level={lang.level || 0}
+                data-language-item="true"
+              >
                 <button
                   onClick={() => removeLanguage(index)}
                   className="absolute -right-2 -top-2 p-1 bg-white rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-opacity hover:text-red-500"
                 >
                   <HiTrash className="w-4 h-4" />
                 </button>
-                <div className="grid grid-cols-[1fr,auto] gap-4 items-start">
+                <div className="grid grid-cols-[1fr,auto] gap-4 items-center">
                   <div>
                     <EditableText
                       value={lang.name}
                       onChange={(value) => updateContent(`languages.${index}.name`, value)}
                       className="font-semibold"
                       placeholder="Language"
+                      style={{ fontSize: 'var(--title-size-item)' }}
                     />
                   </div>
-                  <div className="text-right text-sm text-gray-600 flex flex-col items-end">
-                    <div className="flex items-center gap-2">
+                  <div className="text-right flex flex-col items-end gap-2">
+                    <div className="flex items-center gap-2 language-proficiency-container">
                       <EditableText
                         value={lang.proficiency}
                         onChange={(value) => updateContent(`languages.${index}.proficiency`, value)}
                         placeholder="Proficiency"
+                        className="text-sm text-gray-600 language-proficiency-text"
+                      />
+                      <LanguageLevelSelector
+                        level={lang.level || 0}
+                        onChange={(level) => updateContent(`languages.${index}.level`, level)}
+                        color="primary"
+                        primaryColor={primaryColor}
                       />
                     </div>
                   </div>
@@ -878,6 +1004,7 @@ const Editor = forwardRef<HTMLElement, EditorProps>(({
                     onChange={(value) => updateContent(`certifications.${index}.name`, value)}
                     className="font-semibold"
                     placeholder="Certification Name"
+                    style={{ fontSize: 'var(--title-size-item)' }}
                   />
                 </div>
                 <div className="text-right text-sm text-gray-600 flex flex-col items-end">

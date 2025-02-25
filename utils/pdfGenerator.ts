@@ -139,6 +139,48 @@ export async function generatePDF(resumeElement: HTMLElement): Promise<void> {
       }
     }
 
+    // Extract the primary color from the resume element
+    // Look for elements with bg-primary-600 class or inline style to determine the theme color
+    let primaryColor = '#4f46e5'; // Default color if we can't find it
+    
+    // Try multiple methods to extract the color
+    
+    // Method 1: Try to find an active language level circle with inline style
+    const activeCircleWithStyle = resumeElement.querySelector('.level-circle[data-active="true"][style*="background"]');
+    if (activeCircleWithStyle instanceof HTMLElement && activeCircleWithStyle.style.backgroundColor) {
+      primaryColor = activeCircleWithStyle.style.backgroundColor;
+      console.log('Extracted primary color from inline style:', primaryColor);
+    } 
+    // Method 2: Try to find an active language level circle with bg-primary class
+    else {
+      const activeCircle = resumeElement.querySelector('.level-circle.bg-primary-600');
+      if (activeCircle) {
+        const computedStyle = window.getComputedStyle(activeCircle);
+        const bgColor = computedStyle.backgroundColor;
+        if (bgColor && bgColor !== 'rgba(0, 0, 0, 0)') {
+          primaryColor = bgColor;
+          console.log('Extracted primary color from class:', primaryColor);
+        }
+      }
+    }
+    
+    // Method 3: Try to find any element with the primary color
+    if (primaryColor === '#4f46e5') {
+      const sectionHeaders = resumeElement.querySelectorAll('[style*="color"]');
+      for (const header of sectionHeaders) {
+        if (header instanceof HTMLElement) {
+          const style = window.getComputedStyle(header);
+          if (style.color && style.color !== 'rgba(0, 0, 0, 0)' && style.color !== 'rgb(0, 0, 0)') {
+            primaryColor = style.color;
+            console.log('Extracted primary color from section header:', primaryColor);
+            break;
+          }
+        }
+      }
+    }
+    
+    console.log('Final primary color for PDF:', primaryColor);
+
     // Clone the element to avoid modifying the original
     const clonedElement = resumeElement.cloneNode(true) as HTMLElement;
     document.body.appendChild(clonedElement);
@@ -155,11 +197,208 @@ export async function generatePDF(resumeElement: HTMLElement): Promise<void> {
 
     // Clean up editor elements
     removeElements(clonedElement, [
-      'button',
+      'button:not([data-level-value])', // Don't remove level circles which have data-level-value
       'input[type="text"]',
       '.skill-tag button',
-      '[role="button"]',
+      '[role="button"]:not([data-level-value])', // Don't remove level circles
     ]);
+
+    // Create custom language level indicators for PDF
+    let languageItems = clonedElement.querySelectorAll('[class*="languages"] > div > div[data-language-level]');
+    
+    // If no items found with the first selector, try a more general one
+    if (languageItems.length === 0) {
+      console.log('No language items found with primary selector, trying fallback...');
+      languageItems = clonedElement.querySelectorAll('[class*="languages"] > div > div');
+    }
+    
+    console.log(`Found ${languageItems.length} language items to process`);
+    
+    languageItems.forEach((item, index) => {
+      if (item instanceof HTMLElement) {
+        console.log(`Processing language item ${index + 1}/${languageItems.length}`);
+        // Find the language name and proficiency container
+        const nameElement = item.querySelector('[class*="font-semibold"]');
+        const proficiencyContainer = item.querySelector('[class*="text-right"]');
+        
+        if (nameElement && proficiencyContainer) {
+          // Get the language name
+          const languageName = nameElement.textContent || '';
+          
+          // Get the proficiency text
+          const proficiencyTextContent = proficiencyContainer.querySelector('.language-proficiency-text')?.textContent || '';
+          
+          // Create a new container for the language item with a table-like structure
+          const newItem = document.createElement('table');
+          newItem.className = 'language-item-pdf';
+          newItem.style.cssText = `
+            width: 100% !important;
+            border-collapse: collapse !important;
+            margin-bottom: 10px !important;
+            table-layout: fixed !important;
+          `;
+          
+          // Create a single row
+          const row = document.createElement('tr');
+          
+          // Create language name cell
+          const nameCell = document.createElement('td');
+          nameCell.style.cssText = `
+            font-weight: bold !important;
+            text-align: left !important;
+            vertical-align: middle !important;
+            padding: 0 !important;
+            width: 50% !important;
+          `;
+          nameCell.textContent = languageName;
+          
+          // Create proficiency cell
+          const proficiencyCell = document.createElement('td');
+          proficiencyCell.style.cssText = `
+            text-align: right !important;
+            vertical-align: middle !important;
+            padding: 0 !important;
+            width: 50% !important;
+          `;
+          
+          // Create proficiency text and circles container
+          const proficiencyFlexContainer = document.createElement('div');
+          proficiencyFlexContainer.style.cssText = `
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: flex-end !important;
+            gap: 8px !important;
+          `;
+          
+          // Create proficiency text
+          const proficiencyTextElement = document.createElement('span');
+          proficiencyTextElement.textContent = proficiencyTextContent.replace(/\d/g, '').trim();
+          proficiencyTextElement.style.cssText = `
+            font-size: 14px !important;
+            color: #666 !important;
+          `;
+          
+          // Create circles container
+          const circlesContainer = document.createElement('div');
+          circlesContainer.style.cssText = `
+            display: inline-flex !important;
+            align-items: center !important;
+            gap: 3px !important;
+          `;
+          
+          // Determine the level (1-5) from the data attributes
+          let level = 0;
+          
+          // Try to get level directly from the item's data-language-level attribute
+          const dataLanguageLevel = item.getAttribute('data-language-level');
+          if (dataLanguageLevel) {
+            level = parseInt(dataLanguageLevel, 10);
+          }
+          
+          // If not found, try the language-level container
+          if (level === 0) {
+            const levelContainer = proficiencyContainer.querySelector('.language-level');
+            if (levelContainer && levelContainer instanceof HTMLElement) {
+              const containerDataLevel = levelContainer.getAttribute('data-level');
+              if (containerDataLevel) {
+                level = parseInt(containerDataLevel, 10);
+              }
+            }
+          }
+          
+          // If still not found, try to count the active circles
+          if (level === 0) {
+            const levelCircles = proficiencyContainer.querySelectorAll('[data-level-value]');
+            const activeCircles = Array.from(levelCircles).filter(circle => {
+              if (circle instanceof HTMLElement) {
+                return circle.classList.contains('bg-primary-600') || 
+                       circle.classList.contains('bg-blue-600');
+              }
+              return false;
+            });
+            level = activeCircles.length;
+          }
+          
+          // Default to level 3 if we couldn't detect it
+          if (level <= 0 || level > 5) {
+            level = 3;
+          }
+          
+          // Create circles
+          for (let i = 1; i <= 5; i++) {
+            const circle = document.createElement('div');
+            circle.style.cssText = `
+              width: 10px !important;
+              height: 10px !important;
+              border-radius: 50% !important;
+              background-color: ${i <= level ? primaryColor : '#e5e7eb'} !important;
+              display: inline-block !important;
+            `;
+            circlesContainer.appendChild(circle);
+          }
+          
+          // Assemble the elements
+          proficiencyFlexContainer.appendChild(proficiencyTextElement);
+          proficiencyFlexContainer.appendChild(circlesContainer);
+          proficiencyCell.appendChild(proficiencyFlexContainer);
+          
+          row.appendChild(nameCell);
+          row.appendChild(proficiencyCell);
+          newItem.appendChild(row);
+          
+          // Replace the original item with the new one
+          if (item.parentNode) {
+            item.parentNode.replaceChild(newItem, item);
+            
+            // Add debug info to help troubleshoot
+            console.log('Language item processed with table layout:', {
+              name: languageName,
+              proficiency: proficiencyTextContent,
+              level: level,
+              originalDataLevel: dataLanguageLevel
+            });
+          }
+        }
+      }
+    });
+
+    // Adjust bullet points and text in Experience section
+    const experienceListItems = clonedElement.querySelectorAll('.experience li');
+    experienceListItems.forEach(item => {
+      if (item instanceof HTMLElement) {
+        // Style for the list item container
+        item.style.position = 'relative';
+        item.style.listStylePosition = 'outside';
+        item.style.paddingLeft = '20px';
+        item.style.marginBottom = '8px';
+        
+        // Find and adjust the existing bullet point
+        const bulletPoint = item.querySelector('.bullet-point');
+        if (bulletPoint instanceof HTMLElement) {
+          bulletPoint.style.cssText = `
+            flex-shrink: 0;
+            margin-right: 0.625rem;
+            border-radius: 9999px;
+            transform: translateY(10px);
+            position: absolute;
+            left: 5px;
+          `;
+        }
+        
+        // Create a wrapper for the content
+        const content = item.innerHTML;
+        const wrapper = document.createElement('div');
+        wrapper.innerHTML = content;
+        wrapper.style.cssText = `
+          display: block;
+          transform: translateY(-4px);  /* Adjust text position up/down */
+        `;
+        
+        // Replace the content
+        item.innerHTML = '';
+        item.appendChild(wrapper);
+      }
+    });
 
     // Remove photo placeholder if no photo was uploaded
     const photoContainer = clonedElement.querySelector('.flex-shrink-0.w-32.h-32');

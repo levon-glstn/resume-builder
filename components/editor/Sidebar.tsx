@@ -17,7 +17,9 @@ import {
   HiOutlineUser,
   HiOutlineLink,
   HiOutlineGlobeAlt,
-  HiDownload
+  HiDownload,
+  HiPlusCircle,
+  HiCamera
 } from 'react-icons/hi';
 import { HiOutlineDocumentText } from 'react-icons/hi';
 import { FaLinkedin } from 'react-icons/fa';
@@ -25,7 +27,7 @@ import { generatePDF } from '@/utils/pdfGenerator';
 import { ChevronDown } from 'lucide-react';
 
 const colors = [
-  '#4338ca', // Indigo
+  '#000000', // Black (replacing Indigo)
   '#7c3aed', // Purple
   '#059669', // Green
   '#dc2626', // Red
@@ -108,7 +110,7 @@ export default function Sidebar({
     : "w-64 opacity-100 transform translate-x-0";
 
   const contactFields = [
-    { id: 'photo', icon: <HiOutlineUser className="w-4 h-4" />, label: 'Photo' },
+    { id: 'photo', icon: <HiCamera className="w-4 h-4" />, label: 'Photo' },
     { id: 'email', icon: <HiOutlineMail className="w-4 h-4" />, label: 'Email' },
     { id: 'phone', icon: <HiOutlinePhone className="w-4 h-4" />, label: 'Phone' },
     { id: 'location', icon: <HiOutlineLocationMarker className="w-4 h-4" />, label: 'Location' },
@@ -237,7 +239,7 @@ export default function Sidebar({
               {/* Font Size Selector */}
               <div className="space-y-2">
                 <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
-                  <HiDocumentText className="w-5 h-5" />
+                  <HiPlusCircle className="w-5 h-5" />
                   Font Size
                 </label>
                 <div className="relative">

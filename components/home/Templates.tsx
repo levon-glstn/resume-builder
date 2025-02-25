@@ -3,6 +3,8 @@
 import { motion } from 'framer-motion';
 import Image from 'next/image';
 import { HiCheck } from 'react-icons/hi';
+import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 
 const templates = [
   {
@@ -15,6 +17,14 @@ const templates = [
 ];
 
 export default function Templates() {
+  const router = useRouter();
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleUseTemplate = () => {
+    setIsLoading(true);
+    router.push('/editor');
+  };
+
   return (
     <section id="templates" className="py-20 bg-gradient-to-br from-gray-50 to-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -77,9 +87,20 @@ export default function Templates() {
                 <motion.button
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
-                  className="w-full bg-primary-600 text-white py-2 rounded-md font-medium hover:bg-primary-700 transition-colors"
+                  onClick={handleUseTemplate}
+                  disabled={isLoading}
+                  className="w-full bg-primary-600 text-white py-2 rounded-md font-medium hover:bg-primary-700 transition-colors relative"
                 >
-                  Use This Template
+                  {isLoading ? (
+                    <>
+                      <span className="opacity-0">Use This Template</span>
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      </div>
+                    </>
+                  ) : (
+                    "Use This Template"
+                  )}
                 </motion.button>
               </div>
             </motion.div>

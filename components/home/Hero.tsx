@@ -3,11 +3,14 @@
 import { motion } from 'framer-motion';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 
 export default function Hero() {
   const router = useRouter();
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleStartBuilding = () => {
+    setIsLoading(true);
     router.push('/editor');
   };
 
@@ -45,9 +48,19 @@ export default function Hero() {
                 onClick={handleStartBuilding}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                className="bg-primary-600 text-white px-5 sm:px-6 py-2.5 sm:py-3 rounded-lg text-sm sm:text-base font-semibold hover:bg-primary-700 transition-colors shadow-lg"
+                disabled={isLoading}
+                className="bg-primary-600 text-white px-5 sm:px-6 py-2.5 sm:py-3 rounded-lg text-sm sm:text-base font-semibold hover:bg-primary-700 transition-colors shadow-lg relative"
               >
-                Start Building Now
+                {isLoading ? (
+                  <>
+                    <span className="opacity-0">Start Building Now</span>
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    </div>
+                  </>
+                ) : (
+                  "Start Building Now"
+                )}
               </motion.button>
             </div>
             <p className="mt-2 md:mt-3 text-xs sm:text-sm text-gray-500">No sign up required to start ✨</p>

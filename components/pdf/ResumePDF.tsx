@@ -6,9 +6,22 @@ import type { ResumeContent } from '@/types/resume';
 interface ResumePDFProps {
   content: ResumeContent;
   activeSections: Record<string, boolean>;
+  primaryColor?: string;
 }
 
-export default function ResumePDF({ content, activeSections }: ResumePDFProps) {
+export default function ResumePDF({ content, activeSections, primaryColor = '#4f46e5' }: ResumePDFProps) {
+  // Convert primaryColor to a CSS variable if it's a Tailwind class reference
+  const getCircleColor = () => {
+    // If it's already a hex or rgb color, return it directly
+    if (primaryColor.startsWith('#') || primaryColor.startsWith('rgb')) {
+      return primaryColor;
+    }
+    // Otherwise, use a default color
+    return '#4f46e5';
+  };
+
+  const circleColor = getCircleColor();
+
   return (
     <div id="resume-content" className="p-8 bg-white">
       {/* Header Section */}
@@ -18,10 +31,12 @@ export default function ResumePDF({ content, activeSections }: ResumePDFProps) {
       </div>
 
       {/* Contact Section */}
-      <div className="flex justify-center space-x-4 text-sm text-gray-600 mt-4">
-        <span>{content.contact.email}</span>
-        <span>{content.contact.phone}</span>
-        <span>{content.contact.location}</span>
+      <div className="flex justify-center space-x-4 text-sm text-gray-600 mt-6">
+        {content.contact.email && <span>{content.contact.email}</span>}
+        {content.contact.phone && <span>{content.contact.phone}</span>}
+        {content.contact.location && <span>{content.contact.location}</span>}
+        {content.contact.linkedin && <span>{content.contact.linkedin}</span>}
+        {content.contact.url && <span>{content.contact.url}</span>}
       </div>
 
       {/* Summary Section */}
@@ -103,7 +118,26 @@ export default function ResumePDF({ content, activeSections }: ResumePDFProps) {
           {content.languages.map((language, index) => (
             <div key={index} className="flex justify-between items-center">
               <span>{language.name}</span>
-              <span className="text-sm text-gray-600">{language.proficiency}</span>
+              <div className="flex items-center gap-4">
+                <span className="text-sm text-gray-600">{language.proficiency}</span>
+                {language.level && (
+                  <div className="flex items-center space-x-1 ml-2" data-pdf-language-circles="true">
+                    {[1, 2, 3, 4, 5].map((value) => (
+                      <div
+                        key={value}
+                        className={`w-3 h-3 rounded-full`}
+                        style={{
+                          backgroundColor: value <= (language.level || 0) ? circleColor : '#e5e7eb'
+                        }}
+                        data-pdf-circle="true"
+                        data-pdf-level={language.level}
+                        data-pdf-position={value}
+                        data-pdf-active={value <= (language.level || 0) ? 'true' : 'false'}
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           ))}
         </div>

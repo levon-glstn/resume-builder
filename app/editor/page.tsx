@@ -5,6 +5,7 @@ import Editor from '../../components/editor/Editor';
 import Sidebar from '../../components/editor/Sidebar';
 import type { ResumeContent } from '../../types/resume';
 import { Poppins, Rubik, Roboto, Open_Sans } from 'next/font/google';
+import ContentWarning from '../../components/editor/ContentWarning';
 
 // Storage keys
 const STORAGE_KEYS = {
@@ -69,7 +70,7 @@ export default function EditorPage() {
   const [activeSections, setActiveSections] = useState<Record<string, boolean>>({
     experience: true,
     education: true,
-    projects: true,
+    projects: false,
     skills: true,
     languages: true,
     'contact.photo': true,
@@ -212,6 +213,7 @@ export default function EditorPage() {
             fontSize={fontSize}
           />
         </div>
+        <ContentWarning resumeElement={resumeRef.current} />
       </main>
     </div>
   );

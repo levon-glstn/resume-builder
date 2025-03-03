@@ -186,7 +186,7 @@ export async function generatePDF(resumeElement: HTMLElement): Promise<void> {
     document.body.appendChild(clonedElement);
     clonedElement.style.position = 'absolute';
     clonedElement.style.left = '-9999px';
-    clonedElement.style.width = '210mm'; // Exact A4 width
+    clonedElement.style.width = '250mm'; // Exact B4 width (changed from A4 210mm)
     
     // Remove editor-only elements
     const removeElements = (element: HTMLElement, selectors: string[]) => {
@@ -577,17 +577,17 @@ export async function generatePDF(resumeElement: HTMLElement): Promise<void> {
     convertSvgIconsToImages(clonedElement);
     await waitForImages(clonedElement);
 
-    // Create PDF with A4 dimensions
+    // Create PDF with B4 dimensions (changed from A4)
     const pdf = new jsPDF({
       orientation: 'portrait',
       unit: 'mm',
-      format: 'a4',
+      format: [250, 353], // B4 dimensions in mm (changed from 'a4')
       compress: true
     });
 
-    // Define A4 dimensions in mm
-    const pdfWidth = 210; // A4 width in mm
-    const pdfHeight = 297; // A4 height in mm
+    // Define B4 dimensions in mm (changed from A4)
+    const pdfWidth = 250; // B4 width in mm (changed from 210mm for A4)
+    const pdfHeight = 353; // B4 height in mm (changed from 297mm for A4)
     
     // Define margins in mm
     const margin = 10; // 10mm margin on all sides
@@ -663,7 +663,7 @@ export async function generatePDF(resumeElement: HTMLElement): Promise<void> {
     const pdfHeightInPx = pdfHeight * 3.779528 * scale;
     const contentHeightInPx = contentHeight * 3.779528 * scale;
     
-    console.log(`PDF dimensions in pixels: ${pdfWidthInPx}px × ${pdfHeightInPx}px`);
+    console.log(`PDF dimensions in pixels: ${pdfWidthInPx}px × ${pdfHeightInPx}px (B4 format)`);
     console.log(`Content area in pixels: ${contentWidth * 3.779528 * scale}px × ${contentHeightInPx}px`);
     
     // Calculate how many pages we need
@@ -719,7 +719,7 @@ export async function generatePDF(resumeElement: HTMLElement): Promise<void> {
       for (let i = 0; i < actualPageCount; i++) {
         // If not the first page, add a new page to the PDF
         if (i > 0) {
-          pdf.addPage();
+          pdf.addPage([pdfWidth, pdfHeight]); // Specify B4 dimensions for new pages
         }
         
         console.log(`Processing page ${i + 1} of ${actualPageCount}`);
@@ -994,7 +994,8 @@ function findSectionBoundaries(element: HTMLElement, scale: number, pageHeightIn
         
         // Don't add a break point between heading and first content
         // or if the content is too close to the heading
-        const isTooCloseToHeading = contentTop - section.headingBottom < 20;
+        // For B4, we can increase this threshold since we have more space
+        const isTooCloseToHeading = contentTop - section.headingBottom < 25; // Increased from 20 for B4
         
         if (index > 0 || !isTooCloseToHeading) {
           breakPoints.push({
@@ -1070,10 +1071,11 @@ function findSectionBoundaries(element: HTMLElement, scale: number, pageHeightIn
   // Sort break points by position
   breakPoints.sort((a, b) => a.y - b.y);
   
-  // Filter out break points that are too close to each other (within 10px)
+  // Filter out break points that are too close to each other
+  // For B4, we can increase this threshold since we have more space
   const filteredBreakPoints = breakPoints.filter((point, index, array) => {
     if (index === 0) return true;
-    return Math.abs(point.y - array[index - 1].y) > 10;
+    return Math.abs(point.y - array[index - 1].y) > 15; // Increased from 10 for B4
   });
   
   console.log(`Found ${filteredBreakPoints.length} potential break points`);
@@ -1111,7 +1113,7 @@ function findSectionBoundaries(element: HTMLElement, scale: number, pageHeightIn
         if (section) {
           const breakPointBeforeHeading = filteredBreakPoints.find(point => 
             point.y < section.headingTop && 
-            currentPageEndY - point.y < pageHeightInPx * 0.2
+            currentPageEndY - point.y < pageHeightInPx * 0.25 // Increased from 0.2 for B4
           );
           
           if (breakPointBeforeHeading) {
@@ -1130,8 +1132,9 @@ function findSectionBoundaries(element: HTMLElement, scale: number, pageHeightIn
             const distA = currentPageEndY - a.y;
             const distB = currentPageEndY - b.y;
             
-            // If they're within 100px of each other, prefer the higher priority one
-            if (Math.abs(distA - distB) < 100) {
+            // If they're within a certain distance of each other, prefer the higher priority one
+            // For B4, we can increase this threshold since we have more space
+            if (Math.abs(distA - distB) < 120) { // Increased from 100 for B4
               return a.priority - b.priority;
             }
             
@@ -1143,8 +1146,9 @@ function findSectionBoundaries(element: HTMLElement, scale: number, pageHeightIn
         if (breakPointsBefore.length > 0) {
           const candidate = breakPointsBefore[0];
           
-          // Only use this break point if it's not too far from the page end (within 20% of page height)
-          if (currentPageEndY - candidate.y < pageHeightInPx * 0.2) {
+          // Only use this break point if it's not too far from the page end
+          // For B4, we can increase this threshold since we have more space
+          if (currentPageEndY - candidate.y < pageHeightInPx * 0.25) { // Increased from 0.2 for B4
             bestBreakY = candidate.y;
             bestBreakPoint = candidate;
           }
@@ -1153,7 +1157,8 @@ function findSectionBoundaries(element: HTMLElement, scale: number, pageHeightIn
         // If we couldn't find a good break point before, look for one after
         if (bestBreakY === currentPageEndY) {
           const breakPointAfter = filteredBreakPoints.find(point => point.y > currentPageEndY);
-          if (breakPointAfter && breakPointAfter.y - currentPageEndY < pageHeightInPx * 0.2) {
+          // For B4, we can increase this threshold since we have more space
+          if (breakPointAfter && breakPointAfter.y - currentPageEndY < pageHeightInPx * 0.25) { // Increased from 0.2 for B4
             bestBreakY = breakPointAfter.y;
             bestBreakPoint = breakPointAfter;
           }
@@ -1244,7 +1249,8 @@ function findBetterBreakPointForSkills(
     }
     
     // Check if break is too close to the top of a skill group
-    if (Math.abs(breakY - top) < 50 && breakY < top) {
+    // For B4, we can increase this threshold slightly since we have more space
+    if (Math.abs(breakY - top) < 60 && breakY < top) { // Increased from 50 to 60 for B4
       splitGroupTop = top;
       splitGroupBottom = bottom;
       isTooCloseToTop = true;
@@ -1261,10 +1267,11 @@ function findBetterBreakPointForSkills(
     console.log(`Break is too close to the top of skill group, finding break point before group`);
     
     // Find a suitable break point before the skill group
+    // For B4, we can allow a slightly larger distance since we have more space
     const breakPointBeforeGroup = breakPoints
       .filter(point => point.y < splitGroupTop! && point.type !== 'skill-group-top' && point.type !== 'skill-container-top')
       .sort((a, b) => b.y - a.y) // Sort in descending order to get the closest one
-      .find(point => splitGroupTop! - point.y < pageHeightInPx * 0.3); // Not too far away
+      .find(point => splitGroupTop! - point.y < pageHeightInPx * 0.35); // Increased from 0.3 to 0.35 for B4
     
     if (breakPointBeforeGroup) {
       console.log(`Found break point before skill group at y=${breakPointBeforeGroup.y}`);
@@ -1281,7 +1288,8 @@ function findBetterBreakPointForSkills(
   console.log(`Distance to top: ${distanceToTop}, distance to bottom: ${distanceToBottom}`);
   
   // If the skill group is too large to fit on a single page, we need to make a decision
-  if (groupHeight > pageHeightInPx * 0.8) {
+  // For B4, we can increase this threshold since we have more space
+  if (groupHeight > pageHeightInPx * 0.85) { // Increased from 0.8 to 0.85 for B4
     console.log(`Skill group is too large (${groupHeight}px) to fit on a single page`);
     
     // In this case, try to find a natural break point within the skill group
@@ -1309,7 +1317,8 @@ function findBetterBreakPointForSkills(
   // For smaller skill groups that can fit on a single page, make a smarter decision
   
   // If we're closer to the top and the group is small enough to fit on the current page
-  if (distanceToTop < distanceToBottom && groupHeight < pageHeightInPx * 0.7) {
+  // For B4, we can increase this threshold since we have more space
+  if (distanceToTop < distanceToBottom && groupHeight < pageHeightInPx * 0.75) { // Increased from 0.7 to 0.75 for B4
     // Try to find a break point before the skill group
     const breakPointBeforeGroup = breakPoints
       .filter(point => 
@@ -1318,7 +1327,7 @@ function findBetterBreakPointForSkills(
         point.type !== 'skill-container-top'
       )
       .sort((a, b) => b.y - a.y) // Sort in descending order to get the closest one
-      .find(point => splitGroupTop! - point.y < pageHeightInPx * 0.3); // Not too far away
+      .find(point => splitGroupTop! - point.y < pageHeightInPx * 0.35); // Increased from 0.3 to 0.35 for B4
     
     if (breakPointBeforeGroup) {
       console.log(`Moving break to before skill group at y=${breakPointBeforeGroup.y}`);
@@ -1335,7 +1344,7 @@ function findBetterBreakPointForSkills(
         point.type !== 'skill-container-bottom'
       )
       .sort((a, b) => a.y - b.y) // Sort in ascending order to get the closest one
-      .find(point => point.y - splitGroupBottom! < pageHeightInPx * 0.3); // Not too far away
+      .find(point => point.y - splitGroupBottom! < pageHeightInPx * 0.35); // Increased from 0.3 to 0.35 for B4
     
     if (breakPointAfterGroup) {
       console.log(`Moving break to after skill group at y=${breakPointAfterGroup.y}`);
@@ -1407,10 +1416,10 @@ function findHeadingBeforeBreak(
       return heading;
     }
     
-    // If the heading is before the break but very close to it (less than 50px)
-    // and most of its content would be on the next page
+    // If the heading is before the break but very close to it
+    // For B4, we can increase this threshold since we have more space
     if (section.headingTop < breakY && 
-        breakY - section.headingBottom < 50 && 
+        breakY - section.headingBottom < 60 && // Increased from 50 to 60 for B4
         section.contentBottom - breakY > (section.contentBottom - section.contentTop) * 0.7) {
       // This heading has too little content on this page
       return heading;

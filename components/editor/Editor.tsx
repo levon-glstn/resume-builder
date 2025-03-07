@@ -21,7 +21,7 @@ import Image from 'next/image';
 import DatePicker from 'react-datepicker';
 import "react-datepicker/dist/react-datepicker.css";
 import EditableField from './EditableField';
-import { FaLinkedin } from 'react-icons/fa';
+import { FaLinkedin, FaGithub } from 'react-icons/fa';
 import { HiOutlineGlobeAlt } from 'react-icons/hi';
 import LanguageLevelSelector from './LanguageLevelSelector';
 
@@ -195,6 +195,8 @@ interface TagProps {
   onDragStart?: (e: React.DragEvent<HTMLDivElement>) => void;
   onDragOver?: (e: React.DragEvent<HTMLDivElement>) => void;
   onDrop?: (e: React.DragEvent<HTMLDivElement>) => void;
+  onDragLeave?: () => void;
+  onDragEnd?: () => void;
   draggable?: boolean;
   index?: number;
 }
@@ -208,6 +210,8 @@ const Tag: React.FC<TagProps> = ({
   onDragStart,
   onDragOver,
   onDrop,
+  onDragLeave,
+  onDragEnd,
   draggable = false,
   index
 }) => {
@@ -256,6 +260,8 @@ const Tag: React.FC<TagProps> = ({
       onDragStart={onDragStart}
       onDragOver={onDragOver}
       onDrop={onDrop}
+      onDragLeave={onDragLeave}
+      onDragEnd={onDragEnd}
       data-index={index}
     >
       <span onClick={() => setIsEditing(true)} className="cursor-text">
@@ -305,6 +311,36 @@ const SectionHeader: React.FC<{
   </div>
 );
 
+// Watermark component
+const Watermark = () => {
+  return (
+    <div 
+      className="flex items-center gap-1 px-2 py-1 bg-white border border-gray-300 rounded watermark-label"
+      style={{ 
+        zIndex: 1000, 
+        pointerEvents: 'none',
+        userSelect: 'none',
+        position: 'absolute',
+        bottom: '5mm',
+        right: '5mm',
+        fontSize: '12px',
+        color: '#6b7280',
+        fontWeight: 600
+      }}
+    >
+      <span>Built with</span>
+      <Image 
+        src="/images/watermark.png" 
+        alt="ResumeCool" 
+        width={14} 
+        height={14} 
+        style={{ display: 'inline-block' }}
+      />
+      <span>ResumeCool</span>
+    </div>
+  );
+};
+
 const Editor = forwardRef<HTMLElement, EditorProps>(({
   content,
   onContentChange,
@@ -318,6 +354,9 @@ const Editor = forwardRef<HTMLElement, EditorProps>(({
   const isDragging = useRef(false);
   const startY = useRef(0);
   const startImageY = useRef(0);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+  const [dragOverSection, setDragOverSection] = useState<string | null>(null);
+  const [dragOverSkillIndex, setDragOverSkillIndex] = useState<number | null>(null);
 
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -408,22 +447,147 @@ const Editor = forwardRef<HTMLElement, EditorProps>(({
     });
   };
 
-  const handleSkillDragStart = (e: React.DragEvent<HTMLDivElement>, index: number) => {
+  const reorderExperience = (fromIndex: number, toIndex: number) => {
+    const newExperience = [...content.experience];
+    const [movedExperience] = newExperience.splice(fromIndex, 1);
+    newExperience.splice(toIndex, 0, movedExperience);
+    
+    onContentChange({
+      ...content,
+      experience: newExperience
+    });
+  };
+
+  const reorderEducation = (fromIndex: number, toIndex: number) => {
+    const newEducation = [...content.education];
+    const [movedEducation] = newEducation.splice(fromIndex, 1);
+    newEducation.splice(toIndex, 0, movedEducation);
+    
+    onContentChange({
+      ...content,
+      education: newEducation
+    });
+  };
+
+  const reorderProjects = (fromIndex: number, toIndex: number) => {
+    if (!content.projects) return;
+    
+    const newProjects = [...content.projects];
+    const [movedProject] = newProjects.splice(fromIndex, 1);
+    newProjects.splice(toIndex, 0, movedProject);
+    
+    onContentChange({
+      ...content,
+      projects: newProjects
+    });
+  };
+
+  const reorderLanguages = (fromIndex: number, toIndex: number) => {
+    if (!content.languages) return;
+    
+    const newLanguages = [...content.languages];
+    const [movedLanguage] = newLanguages.splice(fromIndex, 1);
+    newLanguages.splice(toIndex, 0, movedLanguage);
+    
+    onContentChange({
+      ...content,
+      languages: newLanguages
+    });
+  };
+
+  const reorderCertifications = (fromIndex: number, toIndex: number) => {
+    if (!content.certifications) return;
+    
+    const newCertifications = [...content.certifications];
+    const [movedCertification] = newCertifications.splice(fromIndex, 1);
+    newCertifications.splice(toIndex, 0, movedCertification);
+    
+    onContentChange({
+      ...content,
+      certifications: newCertifications
+    });
+  };
+
+  const handleDragStart = (e: React.DragEvent<HTMLDivElement>, index: number, sectionType: string) => {
     e.dataTransfer.setData('text/plain', index.toString());
+    e.dataTransfer.setData('section-type', sectionType);
     e.dataTransfer.effectAllowed = 'move';
   };
 
-  const handleSkillDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>, index: number, sectionType: string) => {
     e.preventDefault();
     e.dataTransfer.dropEffect = 'move';
+    setDragOverIndex(index);
+    setDragOverSection(sectionType);
+  };
+
+  const handleDragLeave = () => {
+    setDragOverIndex(null);
+    setDragOverSection(null);
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>, dropIndex: number, sectionType: string) => {
+    e.preventDefault();
+    const dragIndex = parseInt(e.dataTransfer.getData('text/plain'), 10);
+    const dragSectionType = e.dataTransfer.getData('section-type');
+    
+    setDragOverIndex(null);
+    setDragOverSection(null);
+    
+    if (dragSectionType !== sectionType) return;
+    
+    if (dragIndex !== dropIndex) {
+      switch (sectionType) {
+        case 'experience':
+          reorderExperience(dragIndex, dropIndex);
+          break;
+        case 'education':
+          reorderEducation(dragIndex, dropIndex);
+          break;
+        case 'projects':
+          reorderProjects(dragIndex, dropIndex);
+          break;
+        case 'languages':
+          reorderLanguages(dragIndex, dropIndex);
+          break;
+        case 'certifications':
+          reorderCertifications(dragIndex, dropIndex);
+          break;
+        case 'skills':
+          reorderSkills(dragIndex, dropIndex);
+          break;
+      }
+    }
+  };
+
+  const handleSkillDragStart = (e: React.DragEvent<HTMLDivElement>, index: number) => {
+    e.dataTransfer.setData('text/plain', index.toString());
+    e.dataTransfer.setData('section-type', 'skills');
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleSkillDragOver = (e: React.DragEvent<HTMLDivElement>, index: number) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    setDragOverSkillIndex(index);
+  };
+
+  const handleSkillDragLeave = () => {
+    setDragOverSkillIndex(null);
   };
 
   const handleSkillDrop = (e: React.DragEvent<HTMLDivElement>, dropIndex: number) => {
     e.preventDefault();
     const dragIndex = parseInt(e.dataTransfer.getData('text/plain'), 10);
+    setDragOverSkillIndex(null);
+    
     if (dragIndex !== dropIndex) {
       reorderSkills(dragIndex, dropIndex);
     }
+  };
+
+  const handleSkillDragEnd = () => {
+    setDragOverSkillIndex(null);
   };
 
   const sections: SectionData[] = [
@@ -502,7 +666,7 @@ const Editor = forwardRef<HTMLElement, EditorProps>(({
       ...(content.languages || []),
       {
         name: 'Language Name',
-        proficiency: 'Proficiency Level',
+        proficiency: 'Proficiency',
         level: 3 // Default to middle level
       }
     ]);
@@ -523,7 +687,7 @@ const Editor = forwardRef<HTMLElement, EditorProps>(({
   };
 
   // Update the contact section to use type checking
-  const allowedContactFields = ['email', 'phone', 'location', 'linkedin', 'url'] as const;
+  const allowedContactFields = ['email', 'phone', 'location', 'linkedin', 'github', 'url'] as const;
   type ContactField = typeof allowedContactFields[number];
 
   // Get font size in pixels based on the selected size
@@ -572,7 +736,7 @@ const Editor = forwardRef<HTMLElement, EditorProps>(({
   return (
     <article 
       ref={ref} 
-      className="bg-white shadow-lg rounded-lg resume-hover-effect"
+      className="bg-white shadow-lg rounded-lg resume-hover-effect touch-auto relative"
       style={{
         width: '225mm',
         minHeight: '315mm',
@@ -585,7 +749,8 @@ const Editor = forwardRef<HTMLElement, EditorProps>(({
         '--title-size-name': titleSizes.name,
         '--title-size-section': titleSizes.sectionTitle,
         '--title-size-job': titleSizes.jobTitle,
-        '--title-size-item': titleSizes.itemTitle
+        '--title-size-item': titleSizes.itemTitle,
+        transformOrigin: 'center center'
       } as React.CSSProperties}
     >
       {/* Header */}
@@ -616,6 +781,7 @@ const Editor = forwardRef<HTMLElement, EditorProps>(({
                     {key === 'phone' && <HiOutlinePhone className="w-4 h-4" style={{ color: primaryColor }} />}
                     {key === 'location' && <HiOutlineLocationMarker className="w-4 h-4" style={{ color: primaryColor }} />}
                     {key === 'linkedin' && <FaLinkedin className="w-4 h-4" style={{ color: primaryColor }} />}
+                    {key === 'github' && <FaGithub className="w-4 h-4" style={{ color: primaryColor }} />}
                     {key === 'url' && <HiOutlineGlobeAlt className="w-4 h-4" style={{ color: primaryColor }} />}
                   </div>
                   <EditableText
@@ -696,7 +862,21 @@ const Editor = forwardRef<HTMLElement, EditorProps>(({
             onTitleChange={(value) => updateContent('sections.experience', value)}
           />
           {content.experience.map((exp, index) => (
-            <div key={index} className="space-y-1 relative group experience-item mt-2">
+            <div 
+              key={index} 
+              className={`space-y-1 relative group experience-item mt-2 cursor-move ${dragOverSection === 'experience' && dragOverIndex === index ? 'bg-gray-50 border border-dashed border-gray-300 rounded-md p-2 -m-2' : ''}`}
+              draggable={true}
+              onDragStart={(e) => handleDragStart(e, index, 'experience')}
+              onDragOver={(e) => handleDragOver(e, index, 'experience')}
+              onDragLeave={handleDragLeave}
+              onDrop={(e) => handleDrop(e, index, 'experience')}
+              onDragEnd={handleDragLeave}
+            >
+              <div className="absolute -left-6 top-1/2 transform -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity">
+                <div className="flex flex-col items-center text-gray-400">
+                  <div className="w-4 h-4">⋮⋮</div>
+                </div>
+              </div>
               <button
                 onClick={() => removeExperience(index)}
                 className="absolute -right-2 -top-2 p-1 bg-white rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-opacity hover:text-red-500"
@@ -764,7 +944,21 @@ const Editor = forwardRef<HTMLElement, EditorProps>(({
             onTitleChange={(value) => updateContent('sections.education', value)}
           />
           {content.education.map((edu, index) => (
-            <div key={index} className="space-y-1 relative group education-item mt-2">
+            <div 
+              key={index} 
+              className={`space-y-1 relative group education-item mt-2 cursor-move ${dragOverSection === 'education' && dragOverIndex === index ? 'bg-gray-50 border border-dashed border-gray-300 rounded-md p-2 -m-2' : ''}`}
+              draggable={true}
+              onDragStart={(e) => handleDragStart(e, index, 'education')}
+              onDragOver={(e) => handleDragOver(e, index, 'education')}
+              onDragLeave={handleDragLeave}
+              onDrop={(e) => handleDrop(e, index, 'education')}
+              onDragEnd={handleDragLeave}
+            >
+              <div className="absolute -left-6 top-1/2 transform -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity">
+                <div className="flex flex-col items-center text-gray-400">
+                  <div className="w-4 h-4">⋮⋮</div>
+                </div>
+              </div>
               <button
                 onClick={() => removeEducation(index)}
                 className="absolute -right-2 -top-2 p-1 bg-white rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-opacity hover:text-red-500"
@@ -837,17 +1031,19 @@ const Editor = forwardRef<HTMLElement, EditorProps>(({
                   }
                 }}
                 color={primaryColor}
-                className="skill-tag"
+                className={`skill-tag ${dragOverSkillIndex === index ? 'ring-2 ring-white ring-opacity-70' : ''}`}
                 onDragStart={(e) => handleSkillDragStart(e, index)}
-                onDragOver={(e) => handleSkillDragOver(e)}
+                onDragOver={(e) => handleSkillDragOver(e, index)}
                 onDrop={(e) => handleSkillDrop(e, index)}
+                onDragLeave={handleSkillDragLeave}
+                onDragEnd={handleSkillDragEnd}
                 draggable={true}
                 index={index}
               />
             ))}
             <input
               type="text"
-              placeholder="Add skill..."
+              placeholder="Add skill"
               className="px-3 py-1 rounded-md text-sm bg-gray-50 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-opacity-50"
               style={{ 
                 flexGrow: 0, 
@@ -882,7 +1078,21 @@ const Editor = forwardRef<HTMLElement, EditorProps>(({
             onTitleChange={(value) => updateContent('sections.projects', value)}
           />
           {content.projects?.map((project, index) => (
-            <div key={index} className="space-y-1 relative group mt-2">
+            <div 
+              key={index} 
+              className={`space-y-1 relative group mt-2 cursor-move ${dragOverSection === 'projects' && dragOverIndex === index ? 'bg-gray-50 border border-dashed border-gray-300 rounded-md p-2 -m-2' : ''}`}
+              draggable={true}
+              onDragStart={(e) => handleDragStart(e, index, 'projects')}
+              onDragOver={(e) => handleDragOver(e, index, 'projects')}
+              onDragLeave={handleDragLeave}
+              onDrop={(e) => handleDrop(e, index, 'projects')}
+              onDragEnd={handleDragLeave}
+            >
+              <div className="absolute -left-6 top-1/2 transform -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity">
+                <div className="flex flex-col items-center text-gray-400">
+                  <div className="w-4 h-4">⋮⋮</div>
+                </div>
+              </div>
               <button
                 onClick={() => removeProject(index)}
                 className="absolute -right-2 -top-2 p-1 bg-white rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-opacity hover:text-red-500"
@@ -933,10 +1143,21 @@ const Editor = forwardRef<HTMLElement, EditorProps>(({
             {content.languages?.map((lang, index) => (
               <div 
                 key={index} 
-                className="space-y-1 relative group" 
+                className={`space-y-1 relative group cursor-move ${dragOverSection === 'languages' && dragOverIndex === index ? 'bg-gray-50 border border-dashed border-gray-300 rounded-md p-2 -m-2' : ''}`}
                 data-language-level={lang.level || 0}
                 data-language-item="true"
+                draggable={true}
+                onDragStart={(e) => handleDragStart(e, index, 'languages')}
+                onDragOver={(e) => handleDragOver(e, index, 'languages')}
+                onDragLeave={handleDragLeave}
+                onDrop={(e) => handleDrop(e, index, 'languages')}
+                onDragEnd={handleDragLeave}
               >
+                <div className="absolute -left-6 top-1/2 transform -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div className="flex flex-col items-center text-gray-400">
+                    <div className="w-4 h-4">⋮⋮</div>
+                  </div>
+                </div>
                 <button
                   onClick={() => removeLanguage(index)}
                   className="absolute -right-2 -top-2 p-1 bg-white rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-opacity hover:text-red-500"
@@ -986,7 +1207,21 @@ const Editor = forwardRef<HTMLElement, EditorProps>(({
             onTitleChange={(value) => updateContent('sections.certifications', value)}
           />
           {(content.certifications || []).map((cert, index) => (
-            <div key={index} className="space-y-1 relative group mt-2">
+            <div 
+              key={index} 
+              className={`space-y-1 relative group mt-2 cursor-move ${dragOverSection === 'certifications' && dragOverIndex === index ? 'bg-gray-50 border border-dashed border-gray-300 rounded-md p-2 -m-2' : ''}`}
+              draggable={true}
+              onDragStart={(e) => handleDragStart(e, index, 'certifications')}
+              onDragOver={(e) => handleDragOver(e, index, 'certifications')}
+              onDragLeave={handleDragLeave}
+              onDrop={(e) => handleDrop(e, index, 'certifications')}
+              onDragEnd={handleDragLeave}
+            >
+              <div className="absolute -left-6 top-1/2 transform -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity">
+                <div className="flex flex-col items-center text-gray-400">
+                  <div className="w-4 h-4">⋮⋮</div>
+                </div>
+              </div>
               <button
                 onClick={() => {
                   const updatedCerts = [...(content.certifications || [])];
@@ -1021,6 +1256,8 @@ const Editor = forwardRef<HTMLElement, EditorProps>(({
           ))}
         </div>
       )}
+
+      <Watermark />
     </article>
   );
 });

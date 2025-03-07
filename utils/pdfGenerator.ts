@@ -11,6 +11,7 @@ const ICONS = {
   phone: '\uf095',      // fa-phone
   location: '\uf3c5',   // fa-map-marker-alt
   linkedin: '\uf0c6',   // fa-linkedin
+  github: '\uf09b',     // fa-github
   url: '\uf0ac'         // fa-globe
 };
 
@@ -59,18 +60,47 @@ function drawIcon(doc: jsPDF, type: string, x: number, y: number, color: RGBColo
       doc.line(x + (size/1.5), y + (size/2), x + (size/1.5), y + (size/1.2));
       doc.line(x + (size/1.5), y + (size/2), x + (size/1.2), y + (size/2));
       break;
+      
+    case 'github':
+      // GitHub icon
+      doc.circle(x + (size/2), y + (size/2), size/2, 'S');
+      // Draw a cat-like face inside the circle
+      doc.circle(x + (size/3), y + (size/2.5), size/8, 'S'); // left eye
+      doc.circle(x + (size/1.5), y + (size/2.5), size/8, 'S'); // right eye
+      doc.line(x + (size/3), y + (size/1.5), x + (size/1.5), y + (size/1.5)); // mouth
+      break;
   }
 }
 
 // Wait for fonts to load before generating PDF
 async function waitForFonts() {
+  // Create a link element for the Poppins font if it doesn't exist
+  if (!document.querySelector('link[href*="Poppins"]')) {
+    const fontLink = document.createElement('link');
+    fontLink.rel = 'stylesheet';
+    fontLink.href = 'https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&display=swap';
+    document.head.appendChild(fontLink);
+    
+    // Create a span with Poppins font to force loading
+    const span = document.createElement('span');
+    span.style.fontFamily = 'Poppins, sans-serif';
+    span.style.fontWeight = 'bold';
+    span.style.position = 'absolute';
+    span.style.visibility = 'hidden';
+    span.textContent = 'Poppins Font Preload';
+    document.body.appendChild(span);
+  }
+
   const fonts = [
     new FontFaceObserver('Helvetica'),
-    new FontFaceObserver('FontAwesome')
+    new FontFaceObserver('FontAwesome'),
+    new FontFaceObserver('Poppins'),
+    new FontFaceObserver('Poppins', { weight: 700 }) // Bold version
   ];
 
   try {
     await Promise.all(fonts.map(font => font.load(null, 5000)));
+    console.log('Fonts loaded successfully for PDF generation');
   } catch (error) {
     console.warn('Some fonts failed to load:', error);
   }
@@ -123,8 +153,118 @@ function convertSvgIconsToImages(element: HTMLElement): void {
   });
 }
 
+// Cache for the preloaded watermark image
+let cachedWatermarkImage: HTMLImageElement | null = null;
+let cachedWatermarkBase64: string | null = null;
+let poppinsFontRegistered = false;
+
+// Add Poppins font to jsPDF
+function addPoppinsFont(pdf: jsPDF): void {
+  if (poppinsFontRegistered) return;
+  
+  try {
+    // Add standard fonts as fallback
+    pdf.setFont('helvetica', 'bold');
+    
+    // Add Poppins font using standard normal font
+    pdf.addFileToVFS('Poppins-normal.ttf', poppinsNormalBase64Font);
+    pdf.addFont('Poppins-normal.ttf', 'Poppins', 'normal');
+    
+    // Add Poppins font using standard bold font
+    pdf.addFileToVFS('Poppins-bold.ttf', poppinsBoldBase64Font);
+    pdf.addFont('Poppins-bold.ttf', 'Poppins', 'bold');
+    
+    // Test if the fonts were properly registered
+    try {
+      // Test normal font
+      pdf.setFont('Poppins', 'normal');
+      console.log('Poppins normal font registered successfully');
+      
+      // Test bold font
+      pdf.setFont('Poppins', 'bold');
+      console.log('Poppins bold font registered successfully');
+      
+      // Reset to helvetica for safety
+      pdf.setFont('helvetica', 'normal');
+    } catch (testError) {
+      console.warn('Font test failed:', testError);
+    }
+    
+    poppinsFontRegistered = true;
+    console.log('Poppins font registered with jsPDF');
+  } catch (error) {
+    console.warn('Failed to add Poppins font to jsPDF:', error);
+  }
+}
+
+// Base64 encoded Poppins normal font (truncated for brevity)
+const poppinsNormalBase64Font = 'AAEAAAASAQAABAAgR0RFRgBKAAgAAAHMAAAAJkdQT1MF1F4iAAAD9AAAAUpHU1VCDqILdwAAAewAAAA0T1MvMnSaAagAAAL4AAAAYGNtYXAAvADcAAACWAAAAERjdnQgK6gHnQAAAqAAAABUZnBnbXf4YKsAAAUEAAABvGdhc3AACAATAAABLAAAAAxnbHlmQQzFEQAACMAAAARgaGVhZBRp/HkAAAKIAAAANmhoZWEHKwOFAAACvAAAACRobXR4EUUBOQAAAeQAAAA2bG9jYQdaBiIAAAKUAAAAHG1heHABIABgAAABnAAAACBuYW1lL0EgkAAAA0wAAAIicG9zdP+4ADIAAAFsAAAAIHByZXB5oUJfAAAEWAAAAH8AAQAAAAFaafEJPYpfDzz1AB8D6AAAAADWN74XAAAAAN1PGxf/OPzvBIkEOgAAAAgAAgAAAAAAAHicY2BkYGC+8e8OAwML0//PDCDAyIAKggEAVbgDiQAAAAAAAwAAABIAAQAAAAAAAgAAABAAcwAAAB4ASgABAAAAAAAAAAAAAAAAAwABAAMAEQABAAAAAAACAAEAAgAWAAABAABRAAAAAAAoArwAAwABBAkAAACAAIwAAwABBAkAAQAMAHAAAwABBAkAAgAIAGgAAwABBAkAAwAMAFwAAwABBAkABAAMAHAAAwABBAkABQAWAFAAAwABBAkABgAcADQAAwABBAkADgA0AAAAaAB0AHQAcAA6AC8ALwBzAGMAcgBpAHAAdABzAC4AcwBpAGwALgBvAHIAZwAvAE8ARgBMAFAAbwBwAHAAaQBuAHMALQBSAGUAZwB1AGwAYQByAFYAZQByAHMAaQBvAG4AIAAzAC4AMAAwADAAUABvAHAAcABpAG4AcwAgAFIAZQBnAHUAbABhAHIAMwAuADAAMAAwADsASQBUAEYATwA7AFAAbwBwAHAAaQBuAHMALQBSAGUAZwB1AGwAYQByAFIAZQBnAHUAbABhAHIAUABvAHAAcABpAG4AcwBDAG8AcAB5AHIAaQBnAGgAdAAgADIAMAAxADQAIABJAG4AZABpAGEAbgAgAFQAeQBwAGUAIABGAG8AdQBuAGQAcgB5AC4AIABBAGwAbAAgAHIAaQBnAGgAdABzACAAcgBlAHMAZQByAHYAZQBkAC4A';
+
+// Base64 encoded Poppins bold font (truncated for brevity)
+const poppinsBoldBase64Font = 'AAEAAAASAQAABAAgR0RFRgBJAAgAAAHMAAAAJkdQT1MF014iAAAD9AAAAUpHU1VCDqILdwAAAewAAAA0T1MvMnSaAagAAAL4AAAAYGNtYXAAvADcAAACWAAAAERjdnQgK6gHnQAAAqAAAABUZnBnbXf4YKsAAAUEAAABvGdhc3AACAATAAABLAAAAAxnbHlmQQzFEQAACMAAAARgaGVhZBRp/HkAAAKIAAAANmhoZWEHKwOFAAACvAAAACRobXR4EUUBOQAAAeQAAAA2bG9jYQdaBiIAAAKUAAAAHG1heHABIABgAAABnAAAACBuYW1lL0EgkAAAA0wAAAIicG9zdP+4ADIAAAFsAAAAIHByZXB5oUJfAAAEWAAAAH8AAQAAAAFaafEJPYpfDzz1AB8D6AAAAADWN74XAAAAAN1PGxf/OPzvBIkEOgAAAAgAAgAAAAAAAHicY2BkYGC+8e8OAwML0//PDCDAyIAKggEAVbgDiQAAAAAAAwAAABIAAQAAAAAAAgAAABAAcwAAAB4ASgABAAAAAAAAAAAAAAAAAwABAAMAEQABAAAAAAACAAEAAgAWAAABAABRAAAAAAAoArwAAwABBAkAAACAAIwAAwABBAkAAQAMAHAAAwABBAkAAgAIAGgAAwABBAkAAwAMAFwAAwABBAkABAAMAHAAAwABBAkABQAWAFAAAwABBAkABgAcADQAAwABBAkADgA0AAAAaAB0AHQAcAA6AC8ALwBzAGMAcgBpAHAAdABzAC4AcwBpAGwALgBvAHIAZwAvAE8ARgBMAFAAbwBwAHAAaQBuAHMALQBCAG8AbABkAFYAZQByAHMAaQBvAG4AIAAzAC4AMAAwADAAUABvAHAAcABpAG4AcwAgAEIAbwBsAGQAMwAuADAAMAAwADsASQBUAEYATwA7AFAAbwBwAHAAaQBuAHMALQBCAG8AbABkAEIAbwBsAGQAUABvAHAAcABpAG4AcwBDAG8AcAB5AHIAaQBnAGgAdAAgADIAMAAxADQAIABJAG4AZABpAGEAbgAgAFQAeQBwAGUAIABGAG8AdQBuAGQAcgB5AC4AIABBAGwAbAAgAHIAaQBnAGgAdABzACAAcgBlAHMAZQByAHYAZQBkAC4A';
+
+// Fallback base64 encoded watermark image (a simple circle)
+const FALLBACK_WATERMARK_BASE64 = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAACXBIWXMAAAsTAAALEwEAmpwYAAABZklEQVR4nO2XMU7DQBBF3xIJIVGkpEmRBuUCHIFDUFBwAa7AEWi5AhVdCpqIggKJIoUiEgUNEs6XxrJiOYljexcKRnrS2B7vzP7xem2TUkpJ/1hLdQfMgAEwBc6BDrAHNLXPFLgARsCkuEEVAVPgFjgDusAu0AZWdWwCH8AYeARGwFtZkDIBM+AeOAW2gTWgASz7MdDSsQ5wBDwAz8DHvCBlAqbADXAErAMrwFLJvHVgEzgG7oDXIpAiAVPgCjgB1nOSFwVpA/vAJfBcFKRIwANwYJJXBekBt8BbXpAQYAYcSvKqILvAuTSfhSAhwAzYyJmwbJCuNKcQJASYqOTKBOkDV3lBQoAPoF8ySJkg6yHAK7BVMkiZIMMQ4EnmKxOkX2ZRWg8BRrJg2SDbwEsI8KwFqEyQgZbmWQgwkQsOKwTZkQvGIcCXSu6kQpCBSu4rBPiWkB9VCNKXkH+EAD9y41GFIGMJ+VsI8KtF6B9/yC9qD0ql6ULwoQAAAABJRU5ErkJggg==';
+
+// Preload the watermark image
+async function preloadWatermarkImage(): Promise<void> {
+  // If already cached, return immediately
+  if (cachedWatermarkImage && cachedWatermarkBase64) {
+    return Promise.resolve();
+  }
+  
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous'; // Enable CORS
+    
+    // Set a timeout to ensure we don't wait forever
+    const timeout = setTimeout(() => {
+      console.warn('Watermark image preload timed out');
+      resolve();
+    }, 3000);
+    
+    img.onload = () => {
+      clearTimeout(timeout);
+      cachedWatermarkImage = img;
+      
+      // Convert the image to base64
+      try {
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext('2d');
+        
+        if (ctx) {
+          ctx.drawImage(img, 0, 0);
+          cachedWatermarkBase64 = canvas.toDataURL('image/png');
+          console.log('Watermark image converted to base64');
+        }
+      } catch (error) {
+        console.error('Failed to convert watermark image to base64:', error);
+      }
+      
+      console.log('Watermark image preloaded successfully');
+      resolve();
+    };
+    
+    img.onerror = () => {
+      clearTimeout(timeout);
+      console.error('Failed to preload watermark image');
+      resolve(); // Continue anyway
+    };
+    
+    img.src = window.location.origin + '/images/watermark.png';
+  });
+}
+
 export async function generatePDF(resumeElement: HTMLElement): Promise<void> {
   try {
+    // Ensure Poppins font is loaded
+    await loadPoppinsFont();
+    
+    // Preload the watermark image
+    await preloadWatermarkImage();
+    
     // Get the name from the resume element
     const nameElement = resumeElement.querySelector('.name');
     let fileName = 'resume.pdf';
@@ -203,8 +343,89 @@ export async function generatePDF(resumeElement: HTMLElement): Promise<void> {
       '[role="button"]:not([data-level-value])', // Don't remove level circles
     ]);
 
+    // Ensure watermark is present in the PDF
+    const existingWatermark = clonedElement.querySelector('.watermark-label');
+    if (existingWatermark) {
+      // Remove existing watermark as we'll add it directly to the canvas
+      existingWatermark.remove();
+    }
+
+    // Remove all previous positioning adjustments
+    const proficiencyCirclesContainers = clonedElement.querySelectorAll('[data-pdf-language-circles="true"], .language-level');
+    proficiencyCirclesContainers.forEach(container => {
+      if (container instanceof HTMLElement) {
+        // Reset all positioning
+        container.style.position = '';
+        container.style.top = '';
+        container.style.transform = '';
+        container.style.marginTop = '';
+        container.style.verticalAlign = '';
+      }
+    });
+
+    // Reset any positioning on individual circles
+    const allCircles = clonedElement.querySelectorAll('[data-pdf-circle="true"], .level-circle, [data-level-value]');
+    allCircles.forEach(circle => {
+      if (circle instanceof HTMLElement) {
+        circle.style.position = 'relative';
+        circle.style.top = '4px'; // Move circles 4px lower
+        circle.style.transform = '';
+        circle.style.verticalAlign = 'middle';
+        circle.style.width = '14px'; // Increase circle size
+        circle.style.height = '14px'; // Increase circle size
+      }
+    });
+
+    // Simple approach: just move the text higher
+    const languageSections = clonedElement.querySelectorAll('[class*="languages"]');
+    languageSections.forEach(section => {
+      // Adjust language names
+      const languageNames = section.querySelectorAll('.flex.justify-between.items-center > span:first-child');
+      languageNames.forEach(name => {
+        if (name instanceof HTMLElement) {
+          name.style.position = 'relative';
+          name.style.top = '-4px';
+        }
+      });
+      
+      // Adjust proficiency text
+      const proficiencyTexts = section.querySelectorAll('.text-sm.text-gray-600');
+      proficiencyTexts.forEach(text => {
+        if (text instanceof HTMLElement) {
+          text.style.position = 'relative';
+          text.style.top = '-4px';
+        }
+      });
+
+      // Specifically target the language-level class
+      const languageLevelContainers = section.querySelectorAll('.language-level');
+      languageLevelContainers.forEach(container => {
+        if (container instanceof HTMLElement) {
+          container.style.display = 'flex';
+          container.style.alignItems = 'center';
+          container.style.gap = '3px';
+          container.style.position = 'relative';
+          container.style.top = '0px'; // Adjust this value as needed
+        }
+        
+        // Style the individual circles within the language-level container
+        const circles = container.querySelectorAll('.level-circle');
+        circles.forEach(circle => {
+          if (circle instanceof HTMLElement) {
+            circle.style.width = '10px';
+            circle.style.height = '10px';
+            circle.style.borderRadius = '50%';
+            circle.style.display = 'inline-block';
+            circle.style.verticalAlign = 'middle';
+            circle.style.position = 'relative';
+            circle.style.top = '0px';
+          }
+        });
+      });
+    });
+
     // Create custom language level indicators for PDF
-    let languageItems = clonedElement.querySelectorAll('[class*="languages"] > div > div[data-language-level]');
+    let languageItems = clonedElement.querySelectorAll('[class*="languages"] .flex.justify-between.items-center');
     
     // If no items found with the first selector, try a more general one
     if (languageItems.length === 0) {
@@ -212,21 +433,91 @@ export async function generatePDF(resumeElement: HTMLElement): Promise<void> {
       languageItems = clonedElement.querySelectorAll('[class*="languages"] > div > div');
     }
     
-    console.log(`Found ${languageItems.length} language items to process`);
+    // Try to find language items with the specific language-level class
+    const languageLevelItems = clonedElement.querySelectorAll('.language-level');
+    if (languageLevelItems.length > 0) {
+      console.log(`Found ${languageLevelItems.length} language level items with .language-level class`);
+      
+      // Process these items first
+      languageLevelItems.forEach((container, index) => {
+        if (container instanceof HTMLElement) {
+          // Make sure the container has the right styling
+          container.style.cssText = `
+            display: flex !important;
+            align-items: center !important;
+            gap: 3px !important;
+            position: relative !important;
+            top: 4px !important; /* Move circles 4px lower */
+          `;
+          
+          // Get the level from the data attribute
+          let level = 0;
+          if (container.hasAttribute('data-level')) {
+            const dataLevel = container.getAttribute('data-level');
+            if (dataLevel) {
+              level = parseInt(dataLevel, 10);
+            }
+          }
+          
+          // If level is still 0, count active circles
+          if (level === 0) {
+            const activeCircles = container.querySelectorAll('[data-active="true"]');
+            level = activeCircles.length;
+          }
+          
+          // Style each circle
+          const circles = container.querySelectorAll('.level-circle');
+          circles.forEach(circle => {
+            if (circle instanceof HTMLElement) {
+              // Get the value of this circle
+              let value = 0;
+              if (circle.hasAttribute('data-level-value')) {
+                const dataValue = circle.getAttribute('data-level-value');
+                if (dataValue) {
+                  value = parseInt(dataValue, 10);
+                }
+              }
+              
+              // Style the circle
+              circle.style.cssText = `
+                width: 14px !important;
+                height: 14px !important;
+                border-radius: 50% !important;
+                background-color: ${value <= level ? primaryColor : '#e5e7eb'} !important;
+                display: inline-block !important;
+                vertical-align: middle !important;
+                position: relative !important;
+                top: 4px !important; /* Move circles 4px lower */
+              `;
+            }
+          });
+          
+          console.log(`Processed language level item ${index} with level ${level}`);
+        }
+      });
+    }
     
+    // Continue with the regular processing for other items
     languageItems.forEach((item, index) => {
       if (item instanceof HTMLElement) {
+        // Skip if this item contains or is a language-level element that we've already processed
+        if (item.classList.contains('language-level') || item.querySelector('.language-level')) {
+          console.log(`Skipping item ${index} as it's already been processed as a language-level item`);
+          return;
+        }
+        
         console.log(`Processing language item ${index + 1}/${languageItems.length}`);
         // Find the language name and proficiency container
-        const nameElement = item.querySelector('[class*="font-semibold"]');
-        const proficiencyContainer = item.querySelector('[class*="text-right"]');
+        const nameElement = item.querySelector('span:first-child');
+        const proficiencyContainer = item.querySelector('.flex.items-center.gap-4');
         
         if (nameElement && proficiencyContainer) {
           // Get the language name
           const languageName = nameElement.textContent || '';
           
           // Get the proficiency text
-          const proficiencyTextContent = proficiencyContainer.querySelector('.language-proficiency-text')?.textContent || '';
+          const proficiencyTextSpan = proficiencyContainer.querySelector('.text-sm.text-gray-600');
+          const proficiencyTextContent = proficiencyTextSpan ? proficiencyTextSpan.textContent || '' : '';
           
           // Create a new container for the language item with a table-like structure
           const newItem = document.createElement('table');
@@ -249,6 +540,8 @@ export async function generatePDF(resumeElement: HTMLElement): Promise<void> {
             vertical-align: middle !important;
             padding: 0 !important;
             width: 50% !important;
+            position: relative !important;
+            top: 0px !important;
           `;
           nameCell.textContent = languageName;
           
@@ -268,6 +561,7 @@ export async function generatePDF(resumeElement: HTMLElement): Promise<void> {
             align-items: center !important;
             justify-content: flex-end !important;
             gap: 8px !important;
+            position: relative !important;
           `;
           
           // Create proficiency text
@@ -276,43 +570,51 @@ export async function generatePDF(resumeElement: HTMLElement): Promise<void> {
           proficiencyTextElement.style.cssText = `
             font-size: 14px !important;
             color: #666 !important;
+            position: relative !important;
+            top: 0px !important;
           `;
           
           // Create circles container
-          const circlesContainer = document.createElement('div');
-          circlesContainer.style.cssText = `
+          const pdfCirclesContainer = document.createElement('div');
+          pdfCirclesContainer.style.cssText = `
             display: inline-flex !important;
             align-items: center !important;
             gap: 3px !important;
+            position: relative !important;
+            top: 4px !important; /* Move circles 4px lower */
           `;
           
           // Determine the level (1-5) from the data attributes
           let level = 0;
+          let originalDataLevel = '';
           
-          // Try to get level directly from the item's data-language-level attribute
-          const dataLanguageLevel = item.getAttribute('data-language-level');
-          if (dataLanguageLevel) {
-            level = parseInt(dataLanguageLevel, 10);
-          }
-          
-          // If not found, try the language-level container
-          if (level === 0) {
-            const levelContainer = proficiencyContainer.querySelector('.language-level');
-            if (levelContainer && levelContainer instanceof HTMLElement) {
-              const containerDataLevel = levelContainer.getAttribute('data-level');
-              if (containerDataLevel) {
-                level = parseInt(containerDataLevel, 10);
+          // Try to get level from the circles container
+          const circlesContainerElement = proficiencyContainer.querySelector('[data-pdf-language-circles="true"]');
+          if (circlesContainerElement) {
+            const activeCircles = circlesContainerElement.querySelectorAll('[data-pdf-active="true"]');
+            if (activeCircles.length > 0) {
+              level = activeCircles.length;
+            } else {
+              // Try to get from data-pdf-level attribute
+              const levelCircle = circlesContainerElement.querySelector('[data-pdf-level]');
+              if (levelCircle) {
+                const dataLevel = levelCircle.getAttribute('data-pdf-level');
+                if (dataLevel) {
+                  level = parseInt(dataLevel, 10);
+                  originalDataLevel = dataLevel;
+                }
               }
             }
           }
           
-          // If still not found, try to count the active circles
+          // If still not found, try to count the active circles by their background color
           if (level === 0) {
-            const levelCircles = proficiencyContainer.querySelectorAll('[data-level-value]');
+            const levelCircles = proficiencyContainer.querySelectorAll('.rounded-full');
             const activeCircles = Array.from(levelCircles).filter(circle => {
               if (circle instanceof HTMLElement) {
-                return circle.classList.contains('bg-primary-600') || 
-                       circle.classList.contains('bg-blue-600');
+                const style = window.getComputedStyle(circle);
+                return style.backgroundColor !== 'rgb(229, 231, 235)' && 
+                       style.backgroundColor !== '#e5e7eb';
               }
               return false;
             });
@@ -328,18 +630,24 @@ export async function generatePDF(resumeElement: HTMLElement): Promise<void> {
           for (let i = 1; i <= 5; i++) {
             const circle = document.createElement('div');
             circle.style.cssText = `
-              width: 10px !important;
-              height: 10px !important;
+              width: 12px !important;
+              height: 12px !important;
               border-radius: 50% !important;
               background-color: ${i <= level ? primaryColor : '#e5e7eb'} !important;
               display: inline-block !important;
+              vertical-align: middle !important;
+              position: relative !important;
+              top: 4px !important; /* Move circles 4px lower */
             `;
-            circlesContainer.appendChild(circle);
+            circle.setAttribute('data-pdf-circle', 'true');
+            circle.setAttribute('data-pdf-position', i.toString());
+            circle.setAttribute('data-pdf-active', i <= level ? 'true' : 'false');
+            pdfCirclesContainer.appendChild(circle);
           }
           
           // Assemble the elements
           proficiencyFlexContainer.appendChild(proficiencyTextElement);
-          proficiencyFlexContainer.appendChild(circlesContainer);
+          proficiencyFlexContainer.appendChild(pdfCirclesContainer);
           proficiencyCell.appendChild(proficiencyFlexContainer);
           
           row.appendChild(nameCell);
@@ -355,7 +663,7 @@ export async function generatePDF(resumeElement: HTMLElement): Promise<void> {
               name: languageName,
               proficiency: proficiencyTextContent,
               level: level,
-              originalDataLevel: dataLanguageLevel
+              originalDataLevel: originalDataLevel
             });
           }
         }
@@ -582,7 +890,9 @@ export async function generatePDF(resumeElement: HTMLElement): Promise<void> {
       orientation: 'portrait',
       unit: 'mm',
       format: [250, 353], // B4 dimensions in mm (changed from 'a4')
-      compress: true
+      compress: true,
+      putOnlyUsedFonts: true, // Important for text selection
+      floatPrecision: 16 // Higher precision for better text positioning
     });
 
     // Define B4 dimensions in mm (changed from A4)
@@ -656,6 +966,9 @@ export async function generatePDF(resumeElement: HTMLElement): Promise<void> {
       }
     });
     
+    // Add watermark to the canvas
+    await addWatermarkToCanvas(fullCanvas);
+    
     console.log(`Canvas dimensions: ${fullCanvas.width}px × ${fullCanvas.height}px`);
     
     // Calculate PDF dimensions in pixels at the current scale
@@ -690,124 +1003,140 @@ export async function generatePDF(resumeElement: HTMLElement): Promise<void> {
         finalWidth = contentHeight * canvasAspectRatio;
       }
       
-      // Add canvas to PDF with maximum quality settings
+      // IMPORTANT: Use a different approach to ensure text is selectable
+      // Convert the canvas to a data URL with a lower quality to reduce file size
+      const canvasDataUrl = fullCanvas.toDataURL('image/jpeg', 0.95);
+      
+      // Add the image as a background layer
       pdf.addImage(
-        fullCanvas.toDataURL('image/png', 1.0),
-        'PNG',
+        canvasDataUrl,
+        'JPEG',
         margin,
         margin,
         finalWidth,
         finalHeight,
         undefined,
-        'FAST' // Use fast compression algorithm for better quality
+        'FAST' // Use fast compression algorithm
       );
       
-      console.log(`Added single page: width=${finalWidth}mm, height=${finalHeight}mm`);
-    } else {
-      // Multi-page approach
-      console.log(`Content requires ${pageCount} pages, using multi-page approach`);
+      // Now extract text from the original HTML and add it as an invisible layer
+      // This makes the text selectable while maintaining the visual appearance
+      extractTextFromHTML(clonedElement, (text, x, y, fontSize, fontFamily, color) => {
+        // Convert coordinates from pixels to PDF units (mm)
+        const pdfX = (x / fullCanvas.width) * finalWidth + margin;
+        const pdfY = (y / fullCanvas.height) * finalHeight + margin;
+        
+        // Set text properties
+        pdf.setFont(fontFamily || 'helvetica');
+        pdf.setFontSize(fontSize || 12);
+        pdf.setTextColor(color || '#000000');
+        
+        // Add invisible text (white text on white background)
+        pdf.setTextColor(0, 0, 0);
+        pdf.text(text, pdfX, pdfY, {
+          baseline: 'top',
+          renderingMode: 'invisible'
+        });
+      });
       
-      // First, identify section boundaries to avoid cutting text
+    } else {
+      // For multi-page content, we need to split the canvas into pages
+      console.log(`Content requires multiple pages (${pageCount} pages)`);
+      
+      // Find optimal page breaks based on section boundaries
       const sectionBoundaries = findSectionBoundaries(clonedElement, scale, contentHeightInPx);
-      console.log('Identified section boundaries:', sectionBoundaries);
       
       // Calculate the actual number of pages needed based on content and section boundaries
       const actualPageCount = sectionBoundaries.length;
-      console.log(`Actual pages needed with smart breaks: ${actualPageCount}`);
       
-      // Process each page based on the smart boundaries
+      console.log(`Optimized to ${actualPageCount} pages based on section boundaries`);
+      
+      // Process each page
       for (let i = 0; i < actualPageCount; i++) {
-        // If not the first page, add a new page to the PDF
+        // If not the first page, add a new page
         if (i > 0) {
-          pdf.addPage([pdfWidth, pdfHeight]); // Specify B4 dimensions for new pages
+          pdf.addPage();
         }
         
-        console.log(`Processing page ${i + 1} of ${actualPageCount}`);
-        
-        // Get the start and end positions for this page
+        // Get the start and end Y positions for this page
         const startY = i === 0 ? 0 : sectionBoundaries[i - 1].endY;
         const endY = sectionBoundaries[i].endY;
         const srcHeight = endY - startY;
         
-        // Skip if we've gone beyond the canvas height or if the slice height is too small
-        if (srcHeight <= 0 || srcHeight < 10) {
-          console.log(`Skipping page ${i + 1} as it has no significant content (height: ${srcHeight}px)`);
-          // If we added a page but there's no content, remove it
-          if (i > 0) {
-            pdf.deletePage(pdf.getNumberOfPages());
-          }
+        console.log(`Page ${i + 1}: startY=${startY}px, endY=${endY}px, height=${srcHeight}px`);
+        
+        // Skip if the height is too small (likely empty page)
+        if (srcHeight < 100) {
+          console.log(`Skipping page ${i + 1} as it's too small (height: ${srcHeight}px)`);
           continue;
         }
         
-        // Create a temporary canvas for this page with high-DPI settings
+        // Create a canvas for this page
         const pageCanvas = document.createElement('canvas');
         pageCanvas.width = fullCanvas.width;
         pageCanvas.height = srcHeight;
         
-        // Get a high-quality rendering context
-        const ctx = pageCanvas.getContext('2d', { alpha: false, desynchronized: false });
-        if (!ctx) {
-          console.error(`Could not get canvas context for page ${i + 1}`);
+        const pageCtx = pageCanvas.getContext('2d');
+        if (!pageCtx) {
+          console.error('Failed to get 2D context for page canvas');
           continue;
         }
         
-        // Apply high-quality rendering settings
-        ctx.imageSmoothingEnabled = true;
-        ctx.imageSmoothingQuality = 'high';
-        
-        // Set white background for the page canvas
-        ctx.fillStyle = '#ffffff';
-        ctx.fillRect(0, 0, pageCanvas.width, pageCanvas.height);
-        
-        // Draw the slice from the full canvas to the page canvas with high quality
-        ctx.drawImage(
-          fullCanvas,
-          0, startY, fullCanvas.width, srcHeight,  // Source rectangle
-          0, 0, fullCanvas.width, srcHeight      // Destination rectangle
+        // Draw the section of the full canvas onto this page canvas
+        pageCtx.drawImage(
+          fullCanvas, 
+          0, startY, // Source x, y
+          fullCanvas.width, srcHeight, // Source width, height
+          0, 0, // Destination x, y
+          fullCanvas.width, srcHeight // Destination width, height
         );
         
-        // Check if the page has actual content (not just white space)
-        const imageData = ctx.getImageData(0, 0, pageCanvas.width, pageCanvas.height).data;
-        let hasContent = false;
-        
-        // Sample the image data to check for non-white pixels
-        // We don't need to check every pixel, just sample at regular intervals
-        const sampleStep = 50; // Check every 50th pixel
-        for (let p = 0; p < imageData.length; p += sampleStep * 4) {
-          // If any RGB value is not 255 (white), we have content
-          if (imageData[p] !== 255 || imageData[p + 1] !== 255 || imageData[p + 2] !== 255) {
-            hasContent = true;
-            break;
-          }
-        }
-        
-        if (!hasContent) {
-          console.log(`Skipping page ${i + 1} as it appears to be empty (all white)`);
-          // If we added a page but there's no content, remove it
-          if (i > 0) {
-            pdf.deletePage(pdf.getNumberOfPages());
-          }
-          continue;
-        }
+        // Add watermark to each page
+        await addWatermarkToCanvas(pageCanvas);
         
         // Calculate dimensions for the PDF
         const pageAspectRatio = pageCanvas.width / pageCanvas.height;
         const finalWidth = contentWidth;
         const finalHeight = finalWidth / pageAspectRatio;
         
-        // Add the page canvas to the PDF with maximum quality settings
+        // IMPORTANT: Use a different approach to ensure text is selectable
+        // Convert the canvas to a data URL with a lower quality to reduce file size
+        const canvasDataUrl = pageCanvas.toDataURL('image/jpeg', 0.95);
+        
+        // Add the image as a background layer
         pdf.addImage(
-          pageCanvas.toDataURL('image/png', 1.0), 
-          'PNG', 
-          margin, margin, 
+          canvasDataUrl,
+          'JPEG',
+          margin, margin,
           finalWidth, finalHeight,
           undefined,
-          'FAST' // Use fast compression algorithm for better quality
+          'FAST'
         );
+        
+        // Now extract text from the original HTML for this page and add it as an invisible layer
+        extractTextFromHTMLForPage(clonedElement, startY, endY, (text, x, y, fontSize, fontFamily, color) => {
+          // Convert coordinates from pixels to PDF units (mm)
+          const pdfX = (x / pageCanvas.width) * finalWidth + margin;
+          const pdfY = ((y - startY) / srcHeight) * finalHeight + margin;
+          
+          // Set text properties
+          pdf.setFont(fontFamily || 'helvetica');
+          pdf.setFontSize(fontSize || 12);
+          
+          // Add invisible text (black text with rendering mode 'invisible')
+          pdf.setTextColor(0, 0, 0);
+          pdf.text(text, pdfX, pdfY, {
+            baseline: 'top',
+            renderingMode: 'invisible'
+          });
+        });
         
         console.log(`Added page ${i + 1}: startY=${startY}px, endY=${endY}px, height=${srcHeight}px, PDF dimensions: ${finalWidth}mm × ${finalHeight}mm`);
       }
     }
+    
+    // Add watermark directly to the PDF
+    addWatermarkToPDF(pdf);
     
     // Save the PDF with maximum quality
     pdf.save(fileName);
@@ -817,6 +1146,129 @@ export async function generatePDF(resumeElement: HTMLElement): Promise<void> {
     
   } catch (error) {
     console.error('Error generating PDF:', error);
+    throw error;
+  }
+}
+
+// Helper function to extract text from HTML elements
+function extractTextFromHTML(element: HTMLElement, callback: (text: string, x: number, y: number, fontSize: number, fontFamily: string, color: string) => void): void {
+  // Get all text nodes
+  const walker = document.createTreeWalker(
+    element,
+    NodeFilter.SHOW_TEXT,
+    {
+      acceptNode: function(node) {
+        // Skip empty text nodes or nodes with only whitespace
+        if (!node.textContent || !node.textContent.trim()) {
+          return NodeFilter.FILTER_REJECT;
+        }
+        
+        // Skip nodes that are children of script or style elements
+        const parent = node.parentElement;
+        if (parent && (parent.tagName === 'SCRIPT' || parent.tagName === 'STYLE')) {
+          return NodeFilter.FILTER_REJECT;
+        }
+        
+        return NodeFilter.FILTER_ACCEPT;
+      }
+    }
+  );
+  
+  // Process each text node
+  let node;
+  while (node = walker.nextNode()) {
+    const textNode = node as Text;
+    const parentElement = textNode.parentElement;
+    
+    if (parentElement) {
+      // Get the text content
+      const text = textNode.textContent?.trim() || '';
+      if (!text) continue;
+      
+      // Get the position of the text
+      const range = document.createRange();
+      range.selectNodeContents(textNode);
+      const rect = range.getBoundingClientRect();
+      
+      // Get the computed style of the parent element
+      const style = window.getComputedStyle(parentElement);
+      const fontSize = parseFloat(style.fontSize);
+      const fontFamily = style.fontFamily;
+      const color = style.color;
+      
+      // Calculate the position relative to the element
+      const elementRect = element.getBoundingClientRect();
+      const x = rect.left - elementRect.left;
+      const y = rect.top - elementRect.top;
+      
+      // Call the callback with the text and its properties
+      callback(text, x, y, fontSize, fontFamily, color);
+    }
+  }
+}
+
+// Helper function to extract text from HTML elements for a specific page
+function extractTextFromHTMLForPage(
+  element: HTMLElement, 
+  startY: number, 
+  endY: number, 
+  callback: (text: string, x: number, y: number, fontSize: number, fontFamily: string, color: string) => void
+): void {
+  // Get all text nodes
+  const walker = document.createTreeWalker(
+    element,
+    NodeFilter.SHOW_TEXT,
+    {
+      acceptNode: function(node) {
+        // Skip empty text nodes or nodes with only whitespace
+        if (!node.textContent || !node.textContent.trim()) {
+          return NodeFilter.FILTER_REJECT;
+        }
+        
+        // Skip nodes that are children of script or style elements
+        const parent = node.parentElement;
+        if (parent && (parent.tagName === 'SCRIPT' || parent.tagName === 'STYLE')) {
+          return NodeFilter.FILTER_REJECT;
+        }
+        
+        return NodeFilter.FILTER_ACCEPT;
+      }
+    }
+  );
+  
+  // Process each text node
+  let node;
+  while (node = walker.nextNode()) {
+    const textNode = node as Text;
+    const parentElement = textNode.parentElement;
+    
+    if (parentElement) {
+      // Get the text content
+      const text = textNode.textContent?.trim() || '';
+      if (!text) continue;
+      
+      // Get the position of the text
+      const range = document.createRange();
+      range.selectNodeContents(textNode);
+      const rect = range.getBoundingClientRect();
+      
+      // Get the computed style of the parent element
+      const style = window.getComputedStyle(parentElement);
+      const fontSize = parseFloat(style.fontSize);
+      const fontFamily = style.fontFamily;
+      const color = style.color;
+      
+      // Calculate the position relative to the element
+      const elementRect = element.getBoundingClientRect();
+      const x = rect.left - elementRect.left;
+      const y = rect.top - elementRect.top;
+      
+      // Only include text that is on this page
+      if (y >= startY && y < endY) {
+        // Call the callback with the text and its properties
+        callback(text, x, y, fontSize, fontFamily, color);
+      }
+    }
   }
 }
 
@@ -1250,7 +1702,7 @@ function findBetterBreakPointForSkills(
     
     // Check if break is too close to the top of a skill group
     // For B4, we can increase this threshold slightly since we have more space
-    if (Math.abs(breakY - top) < 60 && breakY < top) { // Increased from 50 to 60 for B4
+    if (Math.abs(breakY - top) < 60 && breakY < top) {
       splitGroupTop = top;
       splitGroupBottom = bottom;
       isTooCloseToTop = true;
@@ -1427,4 +1879,270 @@ function findHeadingBeforeBreak(
   }
   
   return null;
+}
+
+// Helper function to add watermark to the PDF
+function addWatermarkToCanvas(canvas: HTMLCanvasElement): Promise<void> {
+  return new Promise((resolve) => {
+    const ctx = canvas.getContext('2d');
+    if (!ctx) {
+      resolve();
+      return;
+    }
+    
+    // Position at bottom right with 5mm margin (convert mm to px)
+    const scale = 2.5; // Match the scale used in the PDF generation
+    const bottomMargin = 5 * 3.779528 * scale; // Convert mm to px (1mm ≈ 3.779528px)
+    const rightMargin = 5 * 3.779528 * scale;
+    
+    // Watermark dimensions
+    const width = 160 * scale; // Increased width to accommodate larger font
+    const height = 24 * scale; // Increased height to accommodate larger font
+    const x = canvas.width - width - rightMargin;
+    const y = canvas.height - height - bottomMargin;
+    const radius = 4 * scale;
+    
+    // Draw the watermark background immediately
+    ctx.save();
+    ctx.fillStyle = 'white';
+    ctx.strokeStyle = '#d1d5db';
+    ctx.lineWidth = 1 * scale;
+    
+    // Use a more compatible approach for rounded rectangle
+    ctx.beginPath();
+    ctx.moveTo(x + radius, y);
+    ctx.lineTo(x + width - radius, y);
+    ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+    ctx.lineTo(x + width, y + height - radius);
+    ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+    ctx.lineTo(x + radius, y + height);
+    ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+    ctx.lineTo(x, y + radius);
+    ctx.quadraticCurveTo(x, y, x + radius, y);
+    ctx.closePath();
+    
+    ctx.fill();
+    ctx.stroke();
+    
+    // Draw the text with semi-bold font
+    ctx.fillStyle = '#6b7280';
+    ctx.font = `600 ${12 * scale}px Arial`; // Added 600 for semi-bold
+    ctx.fillText('Built with', x + 8 * scale, y + height/2 + 4 * scale);
+    
+    // Use the cached image if available, otherwise load it
+    if (cachedWatermarkImage) {
+      // Draw the image in the middle
+      const imgSize = 18 * scale; // Increased image size
+      try {
+        ctx.drawImage(
+          cachedWatermarkImage, 
+          x + 55 * scale, // Adjusted position
+          y + (height - imgSize) / 2, 
+          imgSize, 
+          imgSize
+        );
+        
+        // Draw the second part of text
+        ctx.fillText('ResumeCool', x + 75 * scale, y + height/2 + 4 * scale); // Adjusted position
+        
+        ctx.restore();
+        resolve();
+      } catch (error) {
+        console.error('Error drawing cached watermark image:', error);
+        // Fallback to just text
+        ctx.fillText('ResumeCool', x + 55 * scale, y + height/2 + 4 * scale);
+        ctx.restore();
+        resolve();
+      }
+    } else {
+      // Create an image for the watermark
+      const img = new Image();
+      img.crossOrigin = 'anonymous'; // Enable CORS
+      
+      // Set a timeout to ensure we don't wait forever
+      const timeout = setTimeout(() => {
+        console.warn('Watermark image load timed out, continuing without image');
+        ctx.fillText('ResumeCool', x + 55 * scale, y + height/2 + 4 * scale);
+        ctx.restore();
+        resolve();
+      }, 2000);
+      
+      img.onload = () => {
+        clearTimeout(timeout);
+        
+        // Cache the image for future use
+        cachedWatermarkImage = img;
+        
+        // Draw the image in the middle
+        const imgSize = 24 * scale; // Increased image size
+        ctx.drawImage(
+          img, 
+          x + 55 * scale, // Adjusted position
+          y + (height - imgSize) / 2, 
+          imgSize, 
+          imgSize
+        );
+        
+        // Draw the second part of text
+        ctx.fillText('ResumeCool', x + 75 * scale, y + height/2 + 4 * scale); // Adjusted position
+        
+        ctx.restore();
+        resolve();
+      };
+      
+      // Handle image loading errors
+      img.onerror = () => {
+        clearTimeout(timeout);
+        console.error('Failed to load watermark image');
+        // Just draw the text without the image
+        ctx.fillText('ResumeCool', x + 55 * scale, y + height/2 + 4 * scale);
+        ctx.restore();
+        resolve();
+      };
+      
+      img.src = window.location.origin + '/images/watermark.png';
+    }
+  });
+}
+
+// Add watermark directly to the PDF
+function addWatermarkToPDF(pdf: jsPDF): void {
+  try {
+    // Add Poppins font to jsPDF
+    addPoppinsFont(pdf);
+    
+    // Get page dimensions
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    const pageHeight = pdf.internal.pageSize.getHeight();
+    
+    // Watermark dimensions and position
+    const margin = 5; // 5mm margin from edges
+    const watermarkWidth = 55; // Width in mm - reduced to decrease right margin
+    const watermarkHeight = 8.5; // Height in mm - reduced slightly
+    const x = pageWidth - watermarkWidth - margin;
+    const y = pageHeight - watermarkHeight - margin;
+    const cornerRadius = 1.5; // Corner radius in mm
+    
+    // Draw white background with grey border and rounded corners
+    pdf.setFillColor(255, 255, 255); // White
+    pdf.setDrawColor(209, 213, 219); // #d1d5db (gray-300)
+    pdf.setLineWidth(0.2);
+    
+    // Draw rounded rectangle
+    pdf.roundedRect(x, y, watermarkWidth, watermarkHeight, cornerRadius, cornerRadius, 'FD'); // Fill and Draw
+    
+    // Add text with a font that's guaranteed to be bold
+    pdf.setTextColor(107, 114, 128); // #6b7280 (gray-500)
+    
+    // Use helvetica bold which is guaranteed to work in PDFs
+    pdf.setFont('helvetica', 'bold');
+    console.log('Using helvetica bold font for watermark for consistent rendering');
+    
+    // Use a larger font size for more emphasis
+    pdf.setFontSize(11);
+    
+    // Make text bolder by drawing it multiple times with slight offset
+    const makeTextBold = (text: string, x: number, y: number) => {
+      // Draw the text multiple times with slight offsets
+      pdf.text(text, x, y);
+      pdf.text(text, x + 0.05, y);
+    };
+    
+    // Position text - adjusted for tighter spacing
+    const textX = x + 3.5; // Slightly reduced left margin
+    const textY = y + watermarkHeight/2 + 1.2;
+    makeTextBold('Built with', textX, textY);
+    
+    // Add the watermark image - adjusted position with increased spacing
+    const logoX = textX + 18.5; // Increased spacing between text and icon (was 14.5)
+    const logoY = textY - 3.75; // Moved higher (was -3)
+    const logoWidth = 5; // Increased size
+    const logoHeight = 5; // Increased size
+    
+    // Add ResumeCool text after the icon - adjusted for tighter spacing
+    makeTextBold('ResumeCool', logoX + logoWidth + 0.8, textY); // Reduced spacing after icon
+    
+    // Use the cached base64 image if available
+    if (cachedWatermarkBase64) {
+      try {
+        pdf.addImage(cachedWatermarkBase64, 'PNG', logoX, logoY, logoWidth, logoHeight);
+        console.log('Added watermark image from cached base64');
+      } catch (imgError) {
+        console.error('Error adding cached watermark image to PDF:', imgError);
+        
+        // Try with the fallback image
+        try {
+          pdf.addImage(FALLBACK_WATERMARK_BASE64, 'PNG', logoX, logoY, logoWidth, logoHeight);
+          console.log('Added fallback watermark image to PDF');
+        } catch (fallbackError) {
+          // Fallback to circle if all image attempts fail
+          pdf.setFillColor(107, 114, 128); // #6b7280 (gray-500)
+          pdf.circle(logoX + logoWidth/2, logoY + logoHeight/2, 2.5, 'F'); // Bigger circle
+          console.log('Used circle fallback for watermark (image loading failed)');
+        }
+      }
+    } else {
+      // Try with the fallback image
+      try {
+        pdf.addImage(FALLBACK_WATERMARK_BASE64, 'PNG', logoX, logoY, logoWidth, logoHeight);
+        console.log('Added fallback watermark image to PDF (no cached image)');
+      } catch (fallbackError) {
+        // Fallback to a generic icon
+        pdf.setFillColor(107, 114, 128); // #6b7280 (gray-500)
+        pdf.circle(logoX + logoWidth/2, logoY + logoHeight/2, 2.5, 'F'); // Bigger circle
+        console.log('Used circle fallback for watermark (fallback image failed)');
+      }
+    }
+    
+    console.log('Added styled watermark with image to PDF');
+  } catch (error) {
+    console.error('Error adding watermark to PDF:', error);
+  }
+}
+
+// Helper function to draw a rounded rectangle in PDF
+
+// Load Poppins font for PDF
+async function loadPoppinsFont(): Promise<void> {
+  return new Promise((resolve) => {
+    try {
+      // Check if Poppins font is already loaded
+      if (document.fonts && 
+          Array.from(document.fonts.values()).some(font => 
+            font.family.toLowerCase() === 'poppins'
+          )) {
+        console.log('Poppins font already loaded');
+        resolve();
+        return;
+      }
+      
+      // Create a link element for the Poppins font
+      const fontLink = document.createElement('link');
+      fontLink.rel = 'stylesheet';
+      fontLink.href = 'https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&display=swap';
+      document.head.appendChild(fontLink);
+      
+      // Create a span with Poppins font to force loading
+      const span = document.createElement('span');
+      span.style.fontFamily = 'Poppins, sans-serif';
+      span.style.fontWeight = 'bold';
+      span.style.position = 'absolute';
+      span.style.visibility = 'hidden';
+      span.textContent = 'Poppins Font Preload';
+      document.body.appendChild(span);
+      
+      // Wait for the font to load
+      const poppinsFont = new FontFaceObserver('Poppins', { weight: 700 });
+      poppinsFont.load(null, 5000).then(() => {
+        console.log('Poppins font loaded successfully');
+        resolve();
+      }).catch((err) => {
+        console.warn('Failed to load Poppins font:', err);
+        resolve(); // Continue anyway
+      });
+    } catch (error) {
+      console.warn('Error setting up Poppins font:', error);
+      resolve(); // Continue anyway
+    }
+  });
 }

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   HiPlus,
   HiAcademicCap,
@@ -22,9 +22,10 @@ import {
   HiCamera
 } from 'react-icons/hi';
 import { HiOutlineDocumentText } from 'react-icons/hi';
-import { FaLinkedin } from 'react-icons/fa';
+import { FaLinkedin, FaGithub } from 'react-icons/fa';
 import { generatePDF } from '@/utils/pdfGenerator';
 import { ChevronDown } from 'lucide-react';
+import Image from 'next/image';
 
 const colors = [
   '#000000', // Black (replacing Indigo)
@@ -115,6 +116,7 @@ export default function Sidebar({
     { id: 'phone', icon: <HiOutlinePhone className="w-4 h-4" />, label: 'Phone' },
     { id: 'location', icon: <HiOutlineLocationMarker className="w-4 h-4" />, label: 'Location' },
     { id: 'linkedin', icon: <FaLinkedin className="w-4 h-4" />, label: 'LinkedIn' },
+    { id: 'github', icon: <FaGithub className="w-4 h-4" />, label: 'GitHub' },
     { id: 'url', icon: <HiOutlineGlobeAlt className="w-4 h-4" />, label: 'Website' },
   ];
 
@@ -144,10 +146,16 @@ export default function Sidebar({
         {/* Content */}
         <div className="h-full flex flex-col">
           {/* Brand */}
-          <div className="flex items-center p-4 border-b border-gray-200 flex-shrink-0">
-            <h1 className="text-xl font-bold whitespace-nowrap">
-              Resume<span className="bg-gradient-to-r from-primary-500 to-secondary-500 bg-clip-text text-transparent">Craft</span>
-            </h1>
+          <div className="flex items-center justify-start p-2 border-b border-gray-200 flex-shrink-0">
+            <div className="-ml-4">
+              <Image 
+                src="/images/logo.svg" 
+                alt="ResumeCool Logo" 
+                width={250} 
+                height={100} 
+                className="h-20 w-auto"
+              />
+            </div>
           </div>
 
           {/* Scrollable content */}

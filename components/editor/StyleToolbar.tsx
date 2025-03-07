@@ -163,7 +163,7 @@ const sectionTemplates = {
   projects: [{ title: 'Project Name', description: 'Project Description', period: 'Duration' }],
   awards: [{ title: 'Award Name', issuer: 'Issuer', date: 'Date', description: 'Description' }],
   volunteer: [{ role: 'Role', organization: 'Organization', period: 'Duration', description: 'Description' }],
-  languages: [{ name: 'Language', proficiency: 'Proficiency Level' }],
+  languages: [{ name: 'Language', proficiency: 'Proficiency' }],
   certifications: [{ name: 'Certification Name', issuer: 'Issuer' }],
   publications: [{ title: 'Publication Title', publisher: 'Publisher', date: 'Date' }]
 } as const;

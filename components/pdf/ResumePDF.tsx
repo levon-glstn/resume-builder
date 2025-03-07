@@ -36,6 +36,7 @@ export default function ResumePDF({ content, activeSections, primaryColor = '#4f
         {content.contact.phone && <span>{content.contact.phone}</span>}
         {content.contact.location && <span>{content.contact.location}</span>}
         {content.contact.linkedin && <span>{content.contact.linkedin}</span>}
+        {content.contact.github && <span>{content.contact.github}</span>}
         {content.contact.url && <span>{content.contact.url}</span>}
       </div>
 
@@ -117,15 +118,21 @@ export default function ResumePDF({ content, activeSections, primaryColor = '#4f
           <h2 className="text-xl font-bold">Languages</h2>
           {content.languages.map((language, index) => (
             <div key={index} className="flex justify-between items-center">
-              <span>{language.name}</span>
+              <span style={{ position: 'relative', top: '-4px' }}>{language.name}</span>
               <div className="flex items-center gap-4">
-                <span className="text-sm text-gray-600">{language.proficiency}</span>
+                <span className="text-sm text-gray-600" style={{ position: 'relative', top: '-4px' }}>{language.proficiency}</span>
                 {language.level && (
-                  <div className="flex items-center space-x-1 ml-2" data-pdf-language-circles="true">
+                  <div 
+                    className="flex items-center space-x-1 language-level ml-2" 
+                    data-pdf-language-circles="true"
+                    data-level={language.level}
+                    data-language-selector="true"
+                    style={{ position: 'relative', top: '4px' }}
+                  >
                     {[1, 2, 3, 4, 5].map((value) => (
                       <div
                         key={value}
-                        className={`w-3 h-3 rounded-full`}
+                        className={`w-3.5 h-3.5 rounded-full level-circle`}
                         style={{
                           backgroundColor: value <= (language.level || 0) ? circleColor : '#e5e7eb'
                         }}
@@ -133,6 +140,7 @@ export default function ResumePDF({ content, activeSections, primaryColor = '#4f
                         data-pdf-level={language.level}
                         data-pdf-position={value}
                         data-pdf-active={value <= (language.level || 0) ? 'true' : 'false'}
+                        data-level-value={value}
                       />
                     ))}
                   </div>

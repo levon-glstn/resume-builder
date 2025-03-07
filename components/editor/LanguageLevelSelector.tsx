@@ -42,7 +42,10 @@ const LanguageLevelSelector: React.FC<LanguageLevelSelectorProps> = ({
           className={`w-4 h-4 rounded-full transition-colors duration-200 level-circle cursor-pointer ${
             !primaryColor ? getColorClass(value <= level) : ''
           }`}
-          style={primaryColor && value <= level ? { backgroundColor: primaryColor } : undefined}
+          style={{
+            backgroundColor: value <= level && primaryColor ? primaryColor : value <= level ? undefined : '#f9fafb',
+            border: value <= level ? 'none' : '1px solid rgba(0, 0, 0, 0.2)'
+          }}
           role="button"
           aria-label={`Language level ${value}`}
           data-level-value={value}

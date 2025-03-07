@@ -35,7 +35,7 @@ export const metadata: Metadata = {
   icons: {
     icon: [
       {
-        url: '/favicon.ico',
+        url: '/images/favicon.ico',
         sizes: 'any',
       },
     ],
@@ -50,8 +50,9 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${poppins.variable} ${rubik.variable} ${roboto.variable} ${openSans.variable}`}>
       <head>
-        <link rel="icon" href="/favicon.ico" sizes="any" />
+        <link rel="icon" href="/images/favicon.ico" sizes="any" />
         <title>Resume Builder</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, minimum-scale=0.1, user-scalable=yes" />
         <meta name="description" content="Create professional resumes in minutes" />
         <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet" />
         <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700&display=swap" rel="stylesheet" />

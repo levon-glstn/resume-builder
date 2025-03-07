@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import { Disclosure } from '@headlessui/react';
 import { HiMenu, HiX } from 'react-icons/hi';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 
 const navigation = [
   { name: 'How It Works', href: '#how-it-works' },
@@ -40,14 +41,20 @@ export default function Navbar() {
         <>
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex justify-between h-16">
-              <div className="flex items-center">
+              <div className="flex items-center -ml-4 sm:-ml-3 md:-ml-4 lg:-ml-5">
                 <motion.a
                   href="#home"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  className="text-2xl font-bold bg-gradient-to-r from-primary-600 to-secondary-600 bg-clip-text text-transparent"
+                  className="flex items-center"
                 >
-                  ResumeCraft
+                  <Image 
+                    src="/images/logo.svg" 
+                    alt="ResumeCool Logo" 
+                    width={250} 
+                    height={100} 
+                    className="h-20 w-auto"
+                  />
                 </motion.a>
               </div>
               <div className="hidden md:flex items-center space-x-6">

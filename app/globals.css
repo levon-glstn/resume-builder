@@ -2,6 +2,33 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Touch interaction styles for mobile zooming */
+.touch-auto {
+  touch-action: manipulation !important;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Ensure the resume container can be zoomed on mobile */
+@media (max-width: 768px) {
+  .resume-hover-effect {
+    transform-origin: center center;
+    transition: transform 0.2s ease;
+    will-change: transform;
+    min-height: 100vh;
+    transform: scale(1);
+    transform-box: view-box;
+  }
+  
+  /* Container for the resume to allow extreme zoom out */
+  main.touch-auto {
+    min-height: 100vh;
+    overflow-x: hidden;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+  }
+}
+
 /* Font Face Declarations */
 @font-face {
   font-family: 'Rubik';

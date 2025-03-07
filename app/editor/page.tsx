@@ -23,7 +23,7 @@ const defaultContent: ResumeContent = {
   contact: {
     email: 'jonathansmith@gmail.com',
     phone: '(555) 123-4567',
-    location: 'San Francisco, CA',
+    location: 'City, Country',
     linkedin: 'linkedin.com/in/jonathan-smith'
   },
   summary: 'Experienced web developer with a strong background in full-stack development and a passion for creating efficient, scalable applications. Proven track record of delivering high-quality solutions and leading development teams.',
@@ -31,19 +31,19 @@ const defaultContent: ResumeContent = {
     {
       title: 'Senior Web Developer',
       company: 'TechCorp Inc.',
-      location: 'San Francisco, CA',
-      startDate: '2021',
+      location: 'City, Country',
+      startDate: 'MM/YY',
       endDate: 'Present',
-      description: '• Responsibilities and achievements.\n• Responsibilities and achievements.'
+      description: '• Responsibilities and achievements. Use keywords from job description.\n• Responsibilities and achievements. Use keywords from job description.'
     }
   ],
   education: [
     {
       degree: 'BSc Computer Science',
       school: 'University of California',
-      location: 'Berkeley, CA',
-      startDate: '2016',
-      endDate: '2020',
+      location: 'City, Country',
+      startDate: 'MM/YY',
+      endDate: 'MM/YY',
       details: 'Major in Software Engineering, Minor in AI'
     }
   ],
@@ -52,7 +52,7 @@ const defaultContent: ResumeContent = {
     {
       title: 'E-commerce Platform',
       description: 'Built a scalable e-commerce platform using React and Node.js',
-      period: '2022'
+      period: 'MM/YY'
     }
   ],
   languages: [
@@ -201,7 +201,11 @@ export default function EditorPage() {
         fontSize={fontSize}
         onFontSizeChange={setFontSize}
       />
-      <main className="flex-1 overflow-auto py-8 animate-gradient" style={getGradientBackground(primaryColor)}>
+      <main className="flex-1 overflow-auto py-8 animate-gradient touch-auto" style={{
+        ...getGradientBackground(primaryColor),
+        minHeight: '100vh',
+        position: 'relative'
+      }}>
         <div className="mx-auto" style={{ maxWidth: 'calc(210mm + 2rem)' }}>
           <Editor
             ref={resumeRef}

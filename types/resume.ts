@@ -23,6 +23,7 @@ export interface Contact {
   location: string;
   linkedin?: string;
   url?: string;
+  github?: string;
 }
 
 export interface Project {

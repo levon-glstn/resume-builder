@@ -9,6 +9,7 @@ import Templates from '@/components/home/Templates';
 import Testimonials from '@/components/home/Testimonials';
 import FAQ from '@/components/home/FAQ';
 import EditableField from '@/components/editor/EditableField';
+import Image from 'next/image';
 
 const defaultActiveSections = {
   phone: true,
@@ -65,8 +66,14 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             <div className="space-y-4">
-              <a href="#home" className="text-xl font-bold bg-gradient-to-r from-primary-400 to-secondary-400 bg-clip-text text-transparent">
-                ResumeCraft
+              <a href="#home" className="block -ml-0 sm:-ml-3 md:-ml-4 lg:-ml-5">
+                <Image 
+                  src="/images/logo.svg" 
+                  alt="ResumeCool Logo" 
+                  width={250} 
+                  height={100} 
+                  className="h-22 w-auto"
+                />
               </a>
               <p className="text-gray-400 text-sm">
                 Create professional resumes in minutes with our easy-to-use builder.
@@ -113,7 +120,7 @@ export default function Home() {
           
           <div className="border-t border-gray-800 mt-12 pt-8 flex flex-col md:flex-row justify-between items-center">
             <p className="text-gray-400 text-sm">
-              © 2024 ResumeCraft. All rights reserved.
+              © 2024 ResumeCool. All rights reserved.
             </p>
             <div className="flex space-x-6 mt-4 md:mt-0">
               <a href="#" className="text-gray-400 hover:text-white transition-colors">

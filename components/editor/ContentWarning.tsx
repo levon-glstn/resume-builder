@@ -62,8 +62,8 @@ const ContentWarning: React.FC<ContentWarningProps> = ({ resumeElement }) => {
     <div className="fixed bottom-4 right-4 bg-amber-50 border border-amber-300 text-amber-800 px-4 py-2 rounded-lg shadow-md flex items-center gap-2 z-50 animate-fadeIn">
       <HiOutlineExclamation className="text-amber-500 text-xl flex-shrink-0" />
       <div>
-        <p className="font-medium">Content exceeds one page</p>
-        <p className="text-sm">Your resume will be split across multiple pages in the PDF</p>
+        <p className="font-medium">Content may exceed one page</p>
+        <p className="text-sm">Your resume may be split across multiple pages in the PDF</p>
       </div>
     </div>
   );

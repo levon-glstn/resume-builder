@@ -341,6 +341,13 @@ function cropImageToSquare(imgElement: HTMLImageElement, size: number): Promise<
   });
 }
 
+// Add a function to detect mobile devices
+function isMobileDevice(): boolean {
+  return /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(
+    navigator.userAgent.toLowerCase()
+  );
+}
+
 export async function generatePDF(resumeElement: HTMLElement): Promise<void> {
   try {
     // Ensure Poppins font is loaded
@@ -1250,8 +1257,21 @@ export async function generatePDF(resumeElement: HTMLElement): Promise<void> {
     // Add watermark directly to the PDF
     addWatermarkToPDF(pdf);
     
-    // Save the PDF with maximum quality
-    pdf.save(fileName);
+    // Check if it's a mobile device
+    if (isMobileDevice()) {
+      // For mobile devices, open the PDF in a new tab using blob URL
+      const pdfBlob = pdf.output('blob');
+      const blobUrl = URL.createObjectURL(pdfBlob);
+      window.open(blobUrl, '_blank');
+      
+      // Clean up the blob URL after a delay to ensure it's loaded
+      setTimeout(() => {
+        URL.revokeObjectURL(blobUrl);
+      }, 30000); // 30 seconds should be enough for the PDF to load
+    } else {
+      // For desktop browsers, save the PDF as a download
+      pdf.save(fileName);
+    }
     
     // Clean up the cloned element
     document.body.removeChild(clonedElement);

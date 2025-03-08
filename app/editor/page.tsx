@@ -174,28 +174,6 @@ export default function EditorPage() {
     localStorage.setItem(STORAGE_KEYS.FONT_SIZE, fontSize);
   }, [fontSize]);
 
-  const handleNewResume = () => {
-    if (window.confirm('Are you sure you want to start a new resume? This will clear all current data.')) {
-      setContent(defaultContent);
-      setActiveSections({
-        experience: true,
-        education: true,
-        projects: true,
-        skills: true,
-        languages: true,
-        'contact.photo': true,
-        'contact.email': true,
-        'contact.phone': true,
-        'contact.location': true,
-        'contact.linkedin': false,
-        'contact.url': false,
-      });
-      setPrimaryColor('#4338ca');
-      setFontFamily('Poppins');
-      setFontSize('medium');
-    }
-  };
-
   const handleSectionToggle = (sectionId: string, isActive: boolean) => {
     setActiveSections(prev => ({
       ...prev,
@@ -214,7 +192,6 @@ export default function EditorPage() {
         activeSections={activeSections}
         onColorChange={setPrimaryColor}
         onSectionToggle={handleSectionToggle}
-        onNewResume={handleNewResume}
         defaultContent={defaultContent}
         resumeRef={resumeRef}
         fontFamily={fontFamily}

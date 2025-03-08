@@ -1,7 +1,53 @@
 'use client';
 
-import React, { useState, useMemo, useCallback, useEffect } from 'react';
+import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import Image from 'next/image';
+
+// Update the auto-expand styles to ensure tighter fit and completely remove resize handles
+const autoExpandStyles = `
+  .auto-expand-textarea-container {
+    display: grid;
+    width: fit-content;
+    min-width: 150px;
+    max-width: 100%;
+  }
+  
+  .auto-expand-textarea-container::after,
+  .auto-expand-textarea {
+    grid-area: 1 / 1;
+    width: 100%;
+    min-width: 0;
+  }
+  
+  .auto-expand-textarea-container::after {
+    content: attr(data-value) ' ';
+    visibility: hidden;
+    white-space: pre-wrap;
+    padding: 0.5rem;
+    border: 1px solid transparent;
+  }
+  
+  .auto-expand-textarea {
+    resize: none !important;
+    overflow: hidden;
+  }
+  
+  /* Completely hide resize handle in all browsers */
+  textarea {
+    resize: none !important;
+    
+  }
+  
+  /* Hide WebKit/Blink/Chrome resize handle */
+  textarea::-webkit-resizer {
+    display: none !important;
+  }
+  
+  /* Additional Firefox-specific rule */
+  textarea {
+    overflow: auto !important;
+  }
+`;
 
 interface EditableFieldProps {
   content: string;
@@ -54,11 +100,32 @@ const EditableField: React.FC<EditableFieldProps> = ({
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [localValue, setLocalValue] = useState(content);
+  const contentRef = useRef<HTMLDivElement>(null);
+  const hiddenTextRef = useRef<HTMLSpanElement>(null);
+  
+  // Update local value when content changes
+  useEffect(() => {
+    setLocalValue(content);
+  }, [content]);
+
+  // Add the auto-expand styles to the document
+  useEffect(() => {
+    const styleElement = document.createElement('style');
+    styleElement.textContent = autoExpandStyles;
+    document.head.appendChild(styleElement);
+    
+    return () => {
+      document.head.removeChild(styleElement);
+    };
+  }, []);
 
   const handleBlur = () => {
     setIsEditing(false);
     if (localValue !== content) {
       onEdit(section, localValue);
+    }
+    if (onBlur) {
+      onBlur({} as React.FocusEvent<HTMLInputElement>);
     }
   };
 
@@ -91,12 +158,13 @@ const EditableField: React.FC<EditableFieldProps> = ({
       const processed = processContent(contentToProcess);
       return (
         <div 
+          ref={contentRef}
           className={`whitespace-pre-wrap ${className}`} 
           dangerouslySetInnerHTML={{ __html: processed }}
         />
       );
     }
-    return <div className={className}>{contentToProcess}</div>;
+    return <div ref={contentRef} className={className}>{contentToProcess}</div>;
   }, [value, content, propMultiline, isMultiline, className]);
 
   useEffect(() => {
@@ -187,36 +255,81 @@ const EditableField: React.FC<EditableFieldProps> = ({
   }
 
   if (isEditing) {
-    return propMultiline ? (
-      <textarea
-        value={localValue}
-        onChange={(e) => setLocalValue(e.target.value)}
-        onBlur={handleBlur}
-        onKeyDown={handleKeyDown}
-        className={`w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${className}`}
-        style={style}
-        rows={3}
-        autoFocus
-      />
-    ) : (
-      <input
-        type="text"
-        value={localValue}
-        onChange={(e) => setLocalValue(e.target.value)}
-        onBlur={handleBlur}
-        onKeyDown={handleKeyDown}
-        className={`w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${className}`}
-        style={style}
-        autoFocus
-      />
+    // For multiline content, use auto-expanding textarea
+    if (propMultiline) {
+      return (
+        <div 
+          className="auto-expand-textarea-container"
+          data-value={localValue || placeholder}
+          style={{
+            fontFamily: style.fontFamily || 'inherit',
+            fontSize: style.fontSize || 'inherit',
+            fontWeight: style.fontWeight || 'inherit',
+            lineHeight: style.lineHeight || 'inherit',
+          }}
+        >
+          <textarea
+            value={localValue}
+            onChange={(e) => setLocalValue(e.target.value)}
+            onBlur={handleBlur}
+            onKeyDown={handleKeyDown}
+            className={`auto-expand-textarea p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${className}`}
+            style={{
+              ...style,
+              width: '100%',
+              resize: 'none',
+              overflow: 'hidden',
+            }}
+            autoFocus
+          />
+        </div>
+      );
+    }
+    
+    // For single line content, use input with inline-block display
+    return (
+      <div className="relative inline-block" style={{ maxWidth: '100%' }}>
+        {/* Hidden span to measure text width */}
+        <span 
+          ref={hiddenTextRef}
+          className="absolute invisible whitespace-pre"
+          style={{
+            fontFamily: style.fontFamily || 'inherit',
+            fontSize: style.fontSize || 'inherit',
+            fontWeight: style.fontWeight || 'inherit',
+            letterSpacing: style.letterSpacing || 'inherit',
+            padding: '0.5rem', // Match input padding
+            ...style
+          }}
+        >
+          {localValue || placeholder}
+        </span>
+        
+        <input
+          type="text"
+          value={localValue}
+          onChange={(e) => setLocalValue(e.target.value)}
+          onBlur={handleBlur}
+          onKeyDown={handleKeyDown}
+          className={`p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${className}`}
+          style={{
+            ...style,
+            width: 'auto',
+            minWidth: '3ch', // Minimum width for very short text
+            maxWidth: '100%',
+            resize: 'none', // Disable resizing
+          }}
+          autoFocus
+        />
+      </div>
     );
   }
 
   return (
     <div
       onClick={() => isEditable && setIsEditing(true)}
-      className={`${isEditable ? 'cursor-text hover:bg-gray-50' : ''} p-2 rounded-md ${className}`}
-      style={style}
+      className={`${isEditable ? 'cursor-text hover:bg-gray-50' : ''} p-2 rounded-md inline-block ${className}`}
+      style={{ ...style, maxWidth: '100%' }}
     >
       {displayValue || <span className="text-gray-400">{placeholder}</span>}
     </div>

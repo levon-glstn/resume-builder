@@ -59,7 +59,6 @@ interface SidebarProps {
   activeSections: Record<string, boolean>;
   onColorChange: (color: string) => void;
   onSectionToggle: (sectionId: string, isActive: boolean) => void;
-  onNewResume: () => void;
   defaultContent: any;
   resumeRef: React.RefObject<HTMLElement>;
   fontFamily: string;
@@ -69,12 +68,18 @@ interface SidebarProps {
   onCollapsedChange?: (isCollapsed: boolean) => void;
 }
 
+// Add a function to detect mobile devices
+function isMobileDevice(): boolean {
+  return /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(
+    navigator.userAgent.toLowerCase()
+  );
+}
+
 export default function Sidebar({
   primaryColor,
   activeSections,
   onColorChange,
   onSectionToggle,
-  onNewResume,
   defaultContent,
   resumeRef,
   fontFamily,
@@ -89,10 +94,13 @@ export default function Sidebar({
   const [fontDropdownOpen, setFontDropdownOpen] = useState(false);
   const [sizeDropdownOpen, setSizeDropdownOpen] = useState(false);
   const [selectedFontSize, setSelectedFontSize] = useState(fontSize);
+  const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
     // Set the selected color after component mounts
     setSelectedColor(primaryColor);
+    // Check if we're on a mobile device
+    setIsMobile(isMobileDevice());
   }, [primaryColor]);
 
   // Notify parent component when collapsed state changes
@@ -192,13 +200,6 @@ export default function Sidebar({
               {/* Action Buttons */}
               <div className="space-y-2">
                 <button
-                  className="w-full flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors text-gray-700"
-                  onClick={onNewResume}
-                >
-                  <HiRefresh className="w-5 h-5" />
-                  <span>Start Over</span>
-                </button>
-                <button
                   className={`w-full flex items-center gap-2 px-4 py-2 ${
                     isGeneratingPDF 
                       ? 'bg-gray-100 cursor-not-allowed' 
@@ -208,7 +209,14 @@ export default function Sidebar({
                   disabled={isGeneratingPDF}
                 >
                   <HiDownload className={`w-5 h-5 ${isGeneratingPDF ? 'animate-bounce' : ''}`} />
-                  <span>{isGeneratingPDF ? 'Generating PDF...' : 'Download PDF'}</span>
+                  <span>
+                    {isGeneratingPDF 
+                      ? isMobile
+                        ? 'Opening in a new tab...'
+                        : 'Generating PDF...' 
+                      : 'Download PDF'
+                    }
+                  </span>
                 </button>
               </div>
 

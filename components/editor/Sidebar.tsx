@@ -116,9 +116,10 @@ export default function Sidebar({
     }
   };
 
+  // Remove animation classes and use display property instead
   const sidebarClasses = isCollapsed 
-    ? "w-0 opacity-0 transform -translate-x-full"
-    : "w-64 opacity-100 transform translate-x-0";
+    ? "w-0 hidden"
+    : "w-64";
 
   const contactFields = [
     { id: 'photo', icon: <HiCamera className="w-4 h-4" />, label: 'Photo' },
@@ -146,24 +147,24 @@ export default function Sidebar({
       {/* Collapse Button - Always visible */}
       <button
         onClick={handleToggleCollapse}
-        className="absolute right-0 top-4 z-50 p-2 bg-white rounded-full shadow-lg hover:shadow-xl transition-all duration-500 ease-out border border-gray-200 overflow-hidden group"
+        className="absolute right-0 top-4 z-50 p-2 bg-white rounded-full shadow-lg hover:shadow-xl border border-gray-200 overflow-hidden group"
         style={{ 
           transform: isCollapsed ? 'translateX(100%)' : 'translateX(50%)',
         }}
       >
-        <div className="absolute inset-0 bg-gray-100 opacity-0 group-hover:opacity-100 transition-opacity duration-500 ease-out"></div>
-        <div className="absolute inset-0 bg-primary-50 opacity-0 group-active:opacity-100 transition-all duration-300 ease-out scale-90 group-active:scale-100 rounded-full"></div>
-        <div className="transition-transform duration-500 ease-out" style={{ transform: isCollapsed ? 'rotate(180deg)' : 'rotate(0deg)' }}>
+        <div className="absolute inset-0 bg-gray-100 opacity-0 group-hover:opacity-100"></div>
+        <div className="absolute inset-0 bg-primary-50 opacity-0 group-active:opacity-100 scale-90 group-active:scale-100 rounded-full"></div>
+        <div>
           {isCollapsed ? (
-            <HiChevronLeft className="w-5 h-5 text-gray-600 relative z-10 transition-all duration-500 ease-out" />
+            <HiChevronRight className="w-5 h-5 text-gray-600 relative z-10" />
           ) : (
-            <HiChevronLeft className="w-5 h-5 text-gray-600 relative z-10 transition-all duration-500 ease-out" />
+            <HiChevronLeft className="w-5 h-5 text-gray-600 relative z-10" />
           )}
         </div>
       </button>
 
       <aside 
-        className={`${sidebarClasses} h-screen flex-shrink-0 bg-white border-r border-gray-200 text-gray-900 transition-all duration-500 ease-out overflow-hidden`}
+        className={`${sidebarClasses} h-screen flex-shrink-0 bg-white border-r border-gray-200 text-gray-900 overflow-hidden`}
         style={{
           boxShadow: isCollapsed ? 'none' : '4px 0 16px -8px rgba(0, 0, 0, 0.1)'
         }}
@@ -179,7 +180,7 @@ export default function Sidebar({
                   alt="ResumeCool Logo" 
                   width={250} 
                   height={100} 
-                  className="h-20 w-auto transition-all duration-500 ease-out"
+                  className="h-20 w-auto"
                 />
               </Link>
             </div>

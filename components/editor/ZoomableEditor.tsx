@@ -22,7 +22,8 @@ const ZoomableEditor: React.FC<ZoomableEditorProps> = ({
     x: 0, 
     y: 0, 
     scale: 1,
-    config: { mass: 1, tension: 350, friction: 40 },
+    // Even faster animation for more responsive experience
+    config: { mass: 0.5, tension: 500, friction: 20 },
     onChange: () => {
       // Only show zoom indicator on mobile
       if (isMobile) {
@@ -109,7 +110,8 @@ const ZoomableEditor: React.FC<ZoomableEditorProps> = ({
       onDrag: ({ offset: [ox, oy], event }) => {
         if (isMobile) {
           event?.preventDefault();
-          api.start({ x: ox, y: oy });
+          // Immediate update for drag with no animation
+          api.set({ x: ox, y: oy });
         }
       },
       onPinch: ({ offset: [d], event }) => {
@@ -118,7 +120,7 @@ const ZoomableEditor: React.FC<ZoomableEditorProps> = ({
           const newScale = 1 + d / 200;
           // Allow much more zooming out (down to 0.1) but limit zooming in to 3x
           const clampedScale = Math.min(Math.max(newScale, 0.1), 3);
-          api.start({ scale: clampedScale });
+          api.start({ scale: clampedScale, immediate: true });
         }
       },
       onDoubleClick: () => {
@@ -205,33 +207,33 @@ const ZoomableEditor: React.FC<ZoomableEditorProps> = ({
           </div>
         )}
         
-        <div className="fixed bottom-4 right-4 z-50 flex gap-2">
+        <div className="fixed bottom-24 right-4 z-50 flex gap-2">
           <button 
             onClick={() => handleZoom(1.2)}
-            className="flex items-center justify-center w-10 h-10 rounded-full bg-white/80 backdrop-blur-sm shadow-lg text-gray-700 hover:bg-gray-100"
+            className="flex items-center justify-center w-12 h-12 rounded-full bg-white shadow-lg text-gray-700 hover:bg-gray-100"
             aria-label="Zoom in"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" viewBox="0 0 20 20" fill="currentColor">
               <path fillRule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clipRule="evenodd" />
             </svg>
           </button>
           
           <button 
             onClick={() => handleZoom(0.8)}
-            className="flex items-center justify-center w-10 h-10 rounded-full bg-white/80 backdrop-blur-sm shadow-lg text-gray-700 hover:bg-gray-100"
+            className="flex items-center justify-center w-12 h-12 rounded-full bg-white shadow-lg text-gray-700 hover:bg-gray-100"
             aria-label="Zoom out"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" viewBox="0 0 20 20" fill="currentColor">
               <path fillRule="evenodd" d="M5 10a1 1 0 011-1h8a1 1 0 110 2H6a1 1 0 01-1-1z" clipRule="evenodd" />
             </svg>
           </button>
           
           <button 
             onClick={() => setShowGuide(true)}
-            className="flex items-center justify-center w-10 h-10 rounded-full bg-white/80 backdrop-blur-sm shadow-lg text-gray-700 hover:bg-gray-100"
+            className="flex items-center justify-center w-12 h-12 rounded-full bg-white shadow-lg text-gray-700 hover:bg-gray-100"
             aria-label="Show gesture guide"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" viewBox="0 0 20 20" fill="currentColor">
               <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1a1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
             </svg>
           </button>

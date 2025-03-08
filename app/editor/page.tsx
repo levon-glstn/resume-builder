@@ -224,7 +224,7 @@ export default function EditorPage() {
         onCollapsedChange={handleSidebarCollapsedChange}
       />
       <main 
-        className={`flex-1 overflow-auto py-8 animate-gradient transition-all duration-500 ease-out ${isMobile ? 'touch-auto pb-20' : ''}`}
+        className={`flex-1 overflow-auto py-8 animate-gradient ${isMobile ? 'touch-auto pb-20' : ''}`}
         style={{
           ...getGradientBackground(primaryColor),
           minHeight: '100vh',
@@ -233,7 +233,7 @@ export default function EditorPage() {
           paddingLeft: isSidebarCollapsed ? '1rem' : '1rem'
         }}
       >
-        <ZoomableEditor className="mx-auto transition-all duration-700 ease-out">
+        <ZoomableEditor className="mx-auto">
           <div 
             style={{ 
               maxWidth: 'calc(210mm + 2rem)',

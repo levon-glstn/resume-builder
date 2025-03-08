@@ -67,6 +67,7 @@ export default function EditorPage() {
   const [primaryColor, setPrimaryColor] = useState('#7c3aed');
   const [fontFamily, setFontFamily] = useState('Poppins');
   const [fontSize, setFontSize] = useState('medium');
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [activeSections, setActiveSections] = useState<Record<string, boolean>>({
     experience: true,
     education: true,
@@ -186,8 +187,12 @@ export default function EditorPage() {
     }));
   };
 
+  const handleSidebarCollapsedChange = (isCollapsed: boolean) => {
+    setIsSidebarCollapsed(isCollapsed);
+  };
+
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div className="flex h-screen bg-gray-50 overflow-hidden">
       <Sidebar
         primaryColor={primaryColor}
         activeSections={activeSections}
@@ -200,13 +205,31 @@ export default function EditorPage() {
         onFontChange={setFontFamily}
         fontSize={fontSize}
         onFontSizeChange={setFontSize}
+        onCollapsedChange={handleSidebarCollapsedChange}
       />
-      <main className="flex-1 overflow-auto py-8 animate-gradient touch-auto" style={{
-        ...getGradientBackground(primaryColor),
-        minHeight: '100vh',
-        position: 'relative'
-      }}>
-        <div className="mx-auto" style={{ maxWidth: 'calc(210mm + 2rem)' }}>
+      <main 
+        className={`flex-1 overflow-auto py-8 animate-gradient touch-auto transition-all duration-500 ease-out`}
+        style={{
+          ...getGradientBackground(primaryColor),
+          minHeight: '100vh',
+          position: 'relative',
+          marginLeft: isSidebarCollapsed ? '0' : '0',
+          paddingLeft: isSidebarCollapsed ? '1rem' : '1rem'
+        }}
+      >
+        <div 
+          className="mx-auto transition-all duration-700 ease-out" 
+          style={{ 
+            maxWidth: 'calc(210mm + 2rem)',
+            transform: isSidebarCollapsed ? 'scale(1.02)' : 'scale(1)',
+            transformOrigin: 'center top',
+            opacity: 1,
+            filter: `brightness(${isSidebarCollapsed ? 1.02 : 1})`,
+            boxShadow: isSidebarCollapsed 
+              ? '0 10px 25px -5px rgba(0, 0, 0, 0.12), 0 8px 10px -6px rgba(0, 0, 0, 0.12)' 
+              : '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)'
+          }}
+        >
           <Editor
             ref={resumeRef}
             content={content}

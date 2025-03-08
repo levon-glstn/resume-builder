@@ -65,6 +65,7 @@ interface SidebarProps {
   onFontChange: (font: string) => void;
   fontSize?: string;
   onFontSizeChange?: (size: string) => void;
+  onCollapsedChange?: (isCollapsed: boolean) => void;
 }
 
 export default function Sidebar({
@@ -78,7 +79,8 @@ export default function Sidebar({
   fontFamily,
   onFontChange,
   fontSize = 'medium',
-  onFontSizeChange
+  onFontSizeChange,
+  onCollapsedChange
 }: SidebarProps) {
   const [isCollapsed, setIsCollapsed] = React.useState(false);
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
@@ -91,6 +93,13 @@ export default function Sidebar({
     // Set the selected color after component mounts
     setSelectedColor(primaryColor);
   }, [primaryColor]);
+
+  // Notify parent component when collapsed state changes
+  useEffect(() => {
+    if (onCollapsedChange) {
+      onCollapsedChange(isCollapsed);
+    }
+  }, [isCollapsed, onCollapsedChange]);
 
   const handleDownloadPDF = async () => {
     if (!resumeRef.current || isGeneratingPDF) return;
@@ -127,22 +136,37 @@ export default function Sidebar({
     }
   };
 
+  const handleToggleCollapse = () => {
+    setIsCollapsed(prev => !prev);
+  };
+
   return (
     <div className="relative">
       {/* Collapse Button - Always visible */}
       <button
-        onClick={() => setIsCollapsed(!isCollapsed)}
-        className="absolute right-0 top-4 z-50 p-2 bg-white rounded-full shadow-lg hover:shadow-xl transition-shadow border border-gray-200"
-        style={{ transform: isCollapsed ? 'translateX(100%)' : 'translateX(50%)' }}
+        onClick={handleToggleCollapse}
+        className="absolute right-0 top-4 z-50 p-2 bg-white rounded-full shadow-lg hover:shadow-xl transition-all duration-500 ease-out border border-gray-200 overflow-hidden group"
+        style={{ 
+          transform: isCollapsed ? 'translateX(100%)' : 'translateX(50%)',
+        }}
       >
-        {isCollapsed ? (
-          <HiChevronRight className="w-5 h-5 text-gray-600" />
-        ) : (
-          <HiChevronLeft className="w-5 h-5 text-gray-600" />
-        )}
+        <div className="absolute inset-0 bg-gray-100 opacity-0 group-hover:opacity-100 transition-opacity duration-500 ease-out"></div>
+        <div className="absolute inset-0 bg-primary-50 opacity-0 group-active:opacity-100 transition-all duration-300 ease-out scale-90 group-active:scale-100 rounded-full"></div>
+        <div className="transition-transform duration-500 ease-out" style={{ transform: isCollapsed ? 'rotate(180deg)' : 'rotate(0deg)' }}>
+          {isCollapsed ? (
+            <HiChevronLeft className="w-5 h-5 text-gray-600 relative z-10 transition-all duration-500 ease-out" />
+          ) : (
+            <HiChevronLeft className="w-5 h-5 text-gray-600 relative z-10 transition-all duration-500 ease-out" />
+          )}
+        </div>
       </button>
 
-      <aside className={`${sidebarClasses} h-screen flex-shrink-0 bg-white border-r border-gray-200 text-gray-900 transition-all duration-300 ease-in-out`}>
+      <aside 
+        className={`${sidebarClasses} h-screen flex-shrink-0 bg-white border-r border-gray-200 text-gray-900 transition-all duration-500 ease-out overflow-hidden`}
+        style={{
+          boxShadow: isCollapsed ? 'none' : '4px 0 16px -8px rgba(0, 0, 0, 0.1)'
+        }}
+      >
         {/* Content */}
         <div className="h-full flex flex-col">
           {/* Brand */}
@@ -153,7 +177,7 @@ export default function Sidebar({
                 alt="ResumeCool Logo" 
                 width={250} 
                 height={100} 
-                className="h-20 w-auto"
+                className="h-20 w-auto transition-all duration-500 ease-out"
               />
             </div>
           </div>

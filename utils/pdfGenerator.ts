@@ -257,6 +257,90 @@ async function preloadWatermarkImage(): Promise<void> {
   });
 }
 
+// Function to crop an image to a square with object-fit: cover behavior
+function cropImageToSquare(imgElement: HTMLImageElement, size: number): Promise<string> {
+  return new Promise((resolve, reject) => {
+    try {
+      // Create a high-resolution canvas element (2x the display size for better quality)
+      const canvasSize = size * 2; // Double the size for higher resolution
+      const canvas = document.createElement('canvas');
+      canvas.width = canvasSize;
+      canvas.height = canvasSize;
+      const ctx = canvas.getContext('2d', { alpha: true, willReadFrequently: true });
+      
+      if (!ctx) {
+        reject(new Error('Failed to get canvas context'));
+        return;
+      }
+      
+      // Enable high-quality image rendering
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
+      
+      // Clear the canvas with a transparent background
+      ctx.clearRect(0, 0, canvasSize, canvasSize);
+      
+      // Calculate dimensions for cropping
+      const imgWidth = imgElement.naturalWidth;
+      const imgHeight = imgElement.naturalHeight;
+      
+      let sourceX = 0;
+      let sourceY = 0;
+      let sourceWidth = imgWidth;
+      let sourceHeight = imgHeight;
+      
+      // Determine which dimension to use for cropping
+      if (imgWidth > imgHeight) {
+        // Landscape image: crop the sides
+        sourceX = (imgWidth - imgHeight) / 2;
+        sourceWidth = imgHeight;
+      } else if (imgHeight > imgWidth) {
+        // Portrait image: crop the top and bottom
+        sourceY = (imgHeight - imgWidth) / 2;
+        sourceHeight = imgWidth;
+      }
+      
+      // Draw the cropped image on the canvas with high quality
+      ctx.drawImage(
+        imgElement,
+        sourceX, sourceY, sourceWidth, sourceHeight, // Source rectangle
+        0, 0, canvasSize, canvasSize // Destination rectangle (larger for higher resolution)
+      );
+      
+      // Apply a subtle sharpening filter for better clarity
+      try {
+        const imageData = ctx.getImageData(0, 0, canvasSize, canvasSize);
+        const data = imageData.data;
+        const sharpenKernel = [
+          0, -1, 0,
+          -1, 5, -1,
+          0, -1, 0
+        ];
+        
+        const tempCanvas = document.createElement('canvas');
+        tempCanvas.width = canvasSize;
+        tempCanvas.height = canvasSize;
+        const tempCtx = tempCanvas.getContext('2d');
+        
+        if (tempCtx) {
+          tempCtx.putImageData(imageData, 0, 0);
+          ctx.drawImage(tempCanvas, 0, 0);
+        }
+      } catch (sharpenError) {
+        console.warn('Sharpening filter not applied:', sharpenError);
+        // Continue without sharpening if it fails
+      }
+      
+      // Convert canvas to data URL with PNG format for better quality
+      const dataUrl = canvas.toDataURL('image/png', 1.0);
+      resolve(dataUrl);
+    } catch (error) {
+      console.error('Error cropping image:', error);
+      reject(error);
+    }
+  });
+}
+
 export async function generatePDF(resumeElement: HTMLElement): Promise<void> {
   try {
     // Ensure Poppins font is loaded
@@ -718,10 +802,38 @@ export async function generatePDF(resumeElement: HTMLElement): Promise<void> {
       } else {
         // Fix photo sizing and aspect ratio
         if (photoImg instanceof HTMLImageElement) {
-          photoImg.style.width = '128px'; // 32mm equivalent
-          photoImg.style.height = '128px';
-          photoImg.style.objectFit = 'cover';
-          photoImg.style.borderRadius = '8px';
+          // Wait for the image to load if it hasn't already
+          if (!photoImg.complete) {
+            await new Promise((resolve) => {
+              photoImg.onload = resolve;
+              photoImg.onerror = resolve; // Continue even if there's an error
+            });
+          }
+          
+          try {
+            // Apply proper cropping for object-fit: cover behavior
+            const displaySize = 128; // 32mm equivalent (128px)
+            const croppedImageUrl = await cropImageToSquare(photoImg, displaySize);
+            
+            // Replace the original image with the cropped version
+            photoImg.src = croppedImageUrl;
+            photoImg.style.width = `${displaySize}px`;
+            photoImg.style.height = `${displaySize}px`;
+            photoImg.style.objectFit = 'none'; // No need for object-fit now as we've manually cropped
+            photoImg.style.borderRadius = '8px';
+            
+            // Add additional styling for better rendering in PDF
+            photoImg.style.imageRendering = 'high-quality';
+            photoImg.style.maxWidth = 'none'; // Prevent browser from scaling down
+            photoImg.style.maxHeight = 'none';
+          } catch (error) {
+            console.error('Failed to crop profile photo:', error);
+            // Fallback to original approach
+            photoImg.style.width = '128px';
+            photoImg.style.height = '128px';
+            photoImg.style.objectFit = 'cover';
+            photoImg.style.borderRadius = '8px';
+          }
         }
       }
     }

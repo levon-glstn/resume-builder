@@ -15,7 +15,9 @@ import {
   HiPlus,
   HiX,
   HiTrash,
-  HiOutlineX
+  HiOutlineX,
+  HiChevronUp,
+  HiChevronDown
 } from 'react-icons/hi';
 import Image from 'next/image';
 import DatePicker from 'react-datepicker';
@@ -285,7 +287,20 @@ const SectionHeader: React.FC<{
   color: string; 
   onAdd?: () => void;
   onTitleChange?: (value: string) => void;
-}> = ({ title, color, onAdd, onTitleChange }) => (
+  onMoveUp?: () => void;
+  onMoveDown?: () => void;
+  canMoveUp?: boolean;
+  canMoveDown?: boolean;
+}> = ({ 
+  title, 
+  color, 
+  onAdd, 
+  onTitleChange,
+  onMoveUp,
+  onMoveDown,
+  canMoveUp = true,
+  canMoveDown = true
+}) => (
   <div className="flex items-center justify-between border-b-[3px] pb-0.5 mb-0" style={{ borderColor: color }}>
     {onTitleChange ? (
       <EditableText
@@ -299,15 +314,40 @@ const SectionHeader: React.FC<{
         {title.toUpperCase()}
       </h2>
     )}
-    {onAdd && (
-      <button
-        onClick={onAdd}
-        className="p-1 hover:bg-gray-100 rounded-md transition-colors"
-        style={{ color }}
-      >
-        <HiPlus className="w-5 h-5" />
-      </button>
-    )}
+    <div className="flex items-center">
+      {onMoveUp && (
+        <button
+          onClick={onMoveUp}
+          disabled={!canMoveUp}
+          className={`p-1 hover:bg-gray-100 rounded-md transition-colors mr-1 ${!canMoveUp ? 'opacity-30 cursor-not-allowed' : ''}`}
+          style={{ color }}
+          title="Move section up"
+        >
+          <HiChevronUp className="w-5 h-5" />
+        </button>
+      )}
+      {onMoveDown && (
+        <button
+          onClick={onMoveDown}
+          disabled={!canMoveDown}
+          className={`p-1 hover:bg-gray-100 rounded-md transition-colors mr-1 ${!canMoveDown ? 'opacity-30 cursor-not-allowed' : ''}`}
+          style={{ color }}
+          title="Move section down"
+        >
+          <HiChevronDown className="w-5 h-5" />
+        </button>
+      )}
+      {onAdd && (
+        <button
+          onClick={onAdd}
+          className="p-1 hover:bg-gray-100 rounded-md transition-colors"
+          style={{ color }}
+          title="Add item"
+        >
+          <HiPlus className="w-5 h-5" />
+        </button>
+      )}
+    </div>
   </div>
 );
 
@@ -357,6 +397,39 @@ const Editor = forwardRef<HTMLElement, EditorProps>(({
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
   const [dragOverSection, setDragOverSection] = useState<string | null>(null);
   const [dragOverSkillIndex, setDragOverSkillIndex] = useState<number | null>(null);
+
+  // Define the order of sections
+  const [sectionOrder, setSectionOrder] = useState<string[]>([
+    'summary',
+    'experience',
+    'education',
+    'skills',
+    'projects',
+    'languages',
+    'certifications'
+  ]);
+
+  // Function to move a section up or down in the order
+  const moveSection = (sectionType: string, direction: 'up' | 'down') => {
+    setSectionOrder(prevOrder => {
+      const currentIndex = prevOrder.indexOf(sectionType);
+      if (currentIndex === -1) return prevOrder;
+
+      const newOrder = [...prevOrder];
+      
+      if (direction === 'up' && currentIndex > 0) {
+        // Swap with the previous section
+        [newOrder[currentIndex], newOrder[currentIndex - 1]] = 
+        [newOrder[currentIndex - 1], newOrder[currentIndex]];
+      } else if (direction === 'down' && currentIndex < prevOrder.length - 1) {
+        // Swap with the next section
+        [newOrder[currentIndex], newOrder[currentIndex + 1]] = 
+        [newOrder[currentIndex + 1], newOrder[currentIndex]];
+      }
+      
+      return newOrder;
+    });
+  };
 
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -835,427 +908,476 @@ const Editor = forwardRef<HTMLElement, EditorProps>(({
         )}
       </div>
 
-      {/* Summary */}
-      {activeSections.summary && (
-        <div className="space-y-1 mb-4">
-          <SectionHeader 
-            title={content.sections?.summary || "Summary"}
-            color={primaryColor}
-            onTitleChange={(value) => updateContent('sections.summary', value)}
-          />
-          <EditableText
-            value={content.summary}
-            onChange={(value) => updateContent('summary', value)}
-            className="text-gray-700"
-            placeholder="Write a brief summary of your professional background and goals..."
-          />
-        </div>
-      )}
+      {/* Render sections in the order defined by sectionOrder */}
+      {sectionOrder.map((sectionType, index) => {
+        // Skip rendering if section is not active
+        if (!activeSections[sectionType]) return null;
 
-      {/* Experience */}
-      {activeSections.experience && (
-        <div className="space-y-1 mb-4">
-          <SectionHeader 
-            title={content.sections?.experience || "Experience"}
-            color={primaryColor}
-            onAdd={addNewExperience}
-            onTitleChange={(value) => updateContent('sections.experience', value)}
-          />
-          {content.experience.map((exp, index) => (
-            <div 
-              key={index} 
-              className={`space-y-1 relative group experience-item mt-2 cursor-move ${dragOverSection === 'experience' && dragOverIndex === index ? 'bg-gray-50 border border-dashed border-gray-300 rounded-md p-2 -m-2' : ''}`}
-              draggable={true}
-              onDragStart={(e) => handleDragStart(e, index, 'experience')}
-              onDragOver={(e) => handleDragOver(e, index, 'experience')}
-              onDragLeave={handleDragLeave}
-              onDrop={(e) => handleDrop(e, index, 'experience')}
-              onDragEnd={handleDragLeave}
-            >
-              <div className="absolute -left-6 top-1/2 transform -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity">
-                <div className="flex flex-col items-center text-gray-400">
-                  <div className="w-4 h-4">⋮⋮</div>
-                </div>
+        // Get active sections only
+        const activeSectionTypes = sectionOrder.filter(type => activeSections[type]);
+        
+        // Find the current section's position among active sections
+        const activeIndex = activeSectionTypes.indexOf(sectionType);
+        
+        // Determine if section can move up or down
+        const canMoveUp = activeIndex > 0;
+        const canMoveDown = activeIndex < activeSectionTypes.length - 1;
+
+        switch (sectionType) {
+          case 'summary':
+            return (
+              <div key={sectionType} className="space-y-1 mb-4">
+                <SectionHeader 
+                  title={content.sections?.summary || "Summary"}
+                  color={primaryColor}
+                  onTitleChange={(value) => updateContent('sections.summary', value)}
+                  onMoveUp={canMoveUp ? () => moveSection(sectionType, 'up') : undefined}
+                  onMoveDown={canMoveDown ? () => moveSection(sectionType, 'down') : undefined}
+                  canMoveUp={canMoveUp}
+                  canMoveDown={canMoveDown}
+                />
+                <EditableText
+                  value={content.summary}
+                  onChange={(value) => updateContent('summary', value)}
+                  className="text-gray-700"
+                  placeholder="Write a brief summary of your professional background and goals..."
+                />
               </div>
-              <button
-                onClick={() => removeExperience(index)}
-                className="absolute -right-2 -top-2 p-1 bg-white rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-opacity hover:text-red-500"
-              >
-                <HiTrash className="w-4 h-4" />
-              </button>
-              <div className="grid grid-cols-[1fr,auto] gap-4 items-start">
-                <div>
-                  <EditableText
-                    value={exp.title}
-                    onChange={(value) => updateContent(`experience.${index}.title`, value)}
-                    className="font-semibold title"
-                    placeholder="Job Title"
-                    style={{ fontSize: 'var(--title-size-item)' }}
-                  />
-                  <EditableText
-                    value={exp.company}
-                    onChange={(value) => updateContent(`experience.${index}.company`, value)}
-                    className="text-gray-600 company"
-                    placeholder="Company Name"
-                  />
-                </div>
-                <div className="text-right text-sm text-gray-600 flex flex-col items-end">
-                  <div className="flex items-center gap-2">
+            );
+          
+          case 'experience':
+            return (
+              <div key={sectionType} className="space-y-1 mb-4">
+                <SectionHeader 
+                  title={content.sections?.experience || "Experience"}
+                  color={primaryColor}
+                  onAdd={addNewExperience}
+                  onTitleChange={(value) => updateContent('sections.experience', value)}
+                  onMoveUp={canMoveUp ? () => moveSection(sectionType, 'up') : undefined}
+                  onMoveDown={canMoveDown ? () => moveSection(sectionType, 'down') : undefined}
+                  canMoveUp={canMoveUp}
+                  canMoveDown={canMoveDown}
+                />
+                {content.experience.map((exp, index) => (
+                  <div 
+                    key={index} 
+                    className={`space-y-1 relative group experience-item mt-2 cursor-move ${dragOverSection === 'experience' && dragOverIndex === index ? 'bg-gray-50 border border-dashed border-gray-300 rounded-md p-2 -m-2' : ''}`}
+                    draggable={true}
+                    onDragStart={(e) => handleDragStart(e, index, 'experience')}
+                    onDragOver={(e) => handleDragOver(e, index, 'experience')}
+                    onDragLeave={handleDragLeave}
+                    onDrop={(e) => handleDrop(e, index, 'experience')}
+                    onDragEnd={handleDragLeave}
+                  >
+                    <div className="absolute -left-6 top-1/2 transform -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="flex flex-col items-center text-gray-400">
+                        <div className="w-4 h-4">⋮⋮</div>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => removeExperience(index)}
+                      className="absolute -right-2 -top-2 p-1 bg-white rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-opacity hover:text-red-500"
+                    >
+                      <HiTrash className="w-4 h-4" />
+                    </button>
+                    <div className="grid grid-cols-[1fr,auto] gap-4 items-start">
+                      <div>
+                        <EditableText
+                          value={exp.title}
+                          onChange={(value) => updateContent(`experience.${index}.title`, value)}
+                          className="font-semibold title"
+                          placeholder="Job Title"
+                          style={{ fontSize: 'var(--title-size-item)' }}
+                        />
+                        <EditableText
+                          value={exp.company}
+                          onChange={(value) => updateContent(`experience.${index}.company`, value)}
+                          className="text-gray-600 company"
+                          placeholder="Company Name"
+                        />
+                      </div>
+                      <div className="text-right text-sm text-gray-600 flex flex-col items-end">
+                        <div className="flex items-center gap-2">
+                          <EditableText
+                            value={exp.startDate || ''}
+                            onChange={(value) => updateContent(`experience.${index}.startDate`, value)}
+                            className="start-date"
+                            placeholder="Start Date"
+                          />
+                          -
+                          <EditableText
+                            value={exp.endDate || ''}
+                            onChange={(value) => updateContent(`experience.${index}.endDate`, value)}
+                            className="end-date"
+                            placeholder="End Date"
+                          />
+                        </div>
+                        <EditableText
+                          value={exp.location}
+                          onChange={(value) => updateContent(`experience.${index}.location`, value)}
+                          className="text-gray-600 location"
+                          placeholder="Location"
+                        />
+                      </div>
+                    </div>
                     <EditableText
-                      value={exp.startDate || ''}
-                      onChange={(value) => updateContent(`experience.${index}.startDate`, value)}
-                      className="start-date"
-                      placeholder="Start Date"
-                    />
-                    -
-                    <EditableText
-                      value={exp.endDate || ''}
-                      onChange={(value) => updateContent(`experience.${index}.endDate`, value)}
-                      className="end-date"
-                      placeholder="End Date"
+                      value={exp.description}
+                      onChange={(value) => updateContent(`experience.${index}.description`, value)}
+                      className="text-gray-700 whitespace-pre-wrap description"
+                      placeholder="• Responsibilities and achievements. Use keywords from job description."
                     />
                   </div>
-                  <EditableText
-                    value={exp.location}
-                    onChange={(value) => updateContent(`experience.${index}.location`, value)}
-                    className="text-gray-600 location"
-                    placeholder="Location"
-                  />
-                </div>
+                ))}
               </div>
-              <EditableText
-                value={exp.description}
-                onChange={(value) => updateContent(`experience.${index}.description`, value)}
-                className="text-gray-700 whitespace-pre-wrap description"
-                placeholder="• Responsibilities and achievements. Use keywords from job description."
-              />
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* Education */}
-      {activeSections.education && (
-        <div className="space-y-1 mb-4">
-          <SectionHeader 
-            title={content.sections?.education || "Education"}
-            color={primaryColor}
-            onAdd={addNewEducation}
-            onTitleChange={(value) => updateContent('sections.education', value)}
-          />
-          {content.education.map((edu, index) => (
-            <div 
-              key={index} 
-              className={`space-y-1 relative group education-item mt-2 cursor-move ${dragOverSection === 'education' && dragOverIndex === index ? 'bg-gray-50 border border-dashed border-gray-300 rounded-md p-2 -m-2' : ''}`}
-              draggable={true}
-              onDragStart={(e) => handleDragStart(e, index, 'education')}
-              onDragOver={(e) => handleDragOver(e, index, 'education')}
-              onDragLeave={handleDragLeave}
-              onDrop={(e) => handleDrop(e, index, 'education')}
-              onDragEnd={handleDragLeave}
-            >
-              <div className="absolute -left-6 top-1/2 transform -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity">
-                <div className="flex flex-col items-center text-gray-400">
-                  <div className="w-4 h-4">⋮⋮</div>
-                </div>
-              </div>
-              <button
-                onClick={() => removeEducation(index)}
-                className="absolute -right-2 -top-2 p-1 bg-white rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-opacity hover:text-red-500"
-              >
-                <HiTrash className="w-4 h-4" />
-              </button>
-              <div className="grid grid-cols-[1fr,auto] gap-4 items-start">
-                <div>
-                  <EditableText
-                    value={edu.degree}
-                    onChange={(value) => updateContent(`education.${index}.degree`, value)}
-                    className="font-semibold degree"
-                    placeholder="Degree"
-                    style={{ fontSize: 'var(--title-size-item)' }}
-                  />
-                  <EditableText
-                    value={edu.school}
-                    onChange={(value) => updateContent(`education.${index}.school`, value)}
-                    className="text-gray-600 school"
-                    placeholder="School"
-                  />
-                </div>
-                <div className="text-right text-sm text-gray-600 flex flex-col items-end">
-                  <div className="flex items-center gap-2">
-                    <EditableText
-                      value={edu.startDate || ''}
-                      onChange={(value) => updateContent(`education.${index}.startDate`, value)}
-                      className="start-date"
-                      placeholder="Start Date"
-                    />
-                    -
-                    <EditableText
-                      value={edu.endDate || ''}
-                      onChange={(value) => updateContent(`education.${index}.endDate`, value)}
-                      className="end-date"
-                      placeholder="End Date"
-                    />
-                  </div>
-                  <EditableText
-                    value={edu.location}
-                    onChange={(value) => updateContent(`education.${index}.location`, value)}
-                    className="text-gray-600 location"
-                    placeholder="Location"
-                  />
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* Skills */}
-      {activeSections.skills && (
-        <div className="space-y-2 mb-4">
-          <SectionHeader 
-            title={content.sections?.skills || "Skills"}
-            color={primaryColor}
-            onTitleChange={(value) => updateContent('sections.skills', value)}
-          />
-          <div className="flex flex-wrap items-center gap-2 mt-1">
-            {content.skills.map((skill, index) => (
-              <Tag
-                key={`${skill}-${index}`}
-                tag={skill}
-                onRemove={() => removeSkill(skill)}
-                onEdit={(newValue) => {
-                  if (newValue.trim()) {
-                    removeSkill(skill);
-                    addSkill(newValue);
-                  }
-                }}
-                color={primaryColor}
-                className={`skill-tag ${dragOverSkillIndex === index ? 'ring-2 ring-white ring-opacity-70' : ''}`}
-                onDragStart={(e) => handleSkillDragStart(e, index)}
-                onDragOver={(e) => handleSkillDragOver(e, index)}
-                onDrop={(e) => handleSkillDrop(e, index)}
-                onDragLeave={handleSkillDragLeave}
-                onDragEnd={handleSkillDragEnd}
-                draggable={true}
-                index={index}
-              />
-            ))}
-            <input
-              type="text"
-              placeholder="Add skill"
-              className="px-3 py-1 rounded-md text-sm bg-gray-50 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-opacity-50"
-              style={{ 
-                flexGrow: 0, 
-                width: 'auto',
-                minWidth: '120px',
-                maxWidth: '200px',
-                flexBasis: 'auto'
-              }}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  const input = e.target as HTMLInputElement;
-                  const value = input.value.trim();
-                  if (value) {
-                    addSkill(value);
-                    input.value = '';
-                  }
-                  e.preventDefault(); // Prevent form submission
-                }
-              }}
-            />
-          </div>
-        </div>
-      )}
-
-      {/* Projects */}
-      {activeSections.projects && (
-        <div className="space-y-1 mb-4">
-          <SectionHeader 
-            title={content.sections?.projects || "Projects"}
-            color={primaryColor}
-            onAdd={addNewProject}
-            onTitleChange={(value) => updateContent('sections.projects', value)}
-          />
-          {content.projects?.map((project, index) => (
-            <div 
-              key={index} 
-              className={`space-y-1 relative group mt-2 cursor-move ${dragOverSection === 'projects' && dragOverIndex === index ? 'bg-gray-50 border border-dashed border-gray-300 rounded-md p-2 -m-2' : ''}`}
-              draggable={true}
-              onDragStart={(e) => handleDragStart(e, index, 'projects')}
-              onDragOver={(e) => handleDragOver(e, index, 'projects')}
-              onDragLeave={handleDragLeave}
-              onDrop={(e) => handleDrop(e, index, 'projects')}
-              onDragEnd={handleDragLeave}
-            >
-              <div className="absolute -left-6 top-1/2 transform -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity">
-                <div className="flex flex-col items-center text-gray-400">
-                  <div className="w-4 h-4">⋮⋮</div>
-                </div>
-              </div>
-              <button
-                onClick={() => removeProject(index)}
-                className="absolute -right-2 -top-2 p-1 bg-white rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-opacity hover:text-red-500"
-              >
-                <HiTrash className="w-4 h-4" />
-              </button>
-              <div className="grid grid-cols-[1fr,auto] gap-4 items-start">
-                <div>
-                  <EditableText
-                    value={project.title}
-                    onChange={(value) => updateContent(`projects.${index}.title`, value)}
-                    className="font-semibold"
-                    placeholder="Project Title"
-                    style={{ fontSize: 'var(--title-size-item)' }}
-                  />
-                  <EditableText
-                    value={project.description}
-                    onChange={(value) => updateContent(`projects.${index}.description`, value)}
-                    className="text-gray-600"
-                    placeholder="Description"
-                  />
-                </div>
-                <div className="text-right text-sm text-gray-600 flex flex-col items-end">
-                  <div className="flex items-center gap-2">
-                    <EditableText
-                      value={project.period}
-                      onChange={(value) => updateContent(`projects.${index}.period`, value)}
-                      placeholder="Period"
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* Languages */}
-      {activeSections.languages && (
-        <div className="space-y-1 mb-4">
-          <SectionHeader 
-            title={content.sections?.languages || "Languages"}
-            color={primaryColor}
-            onAdd={addNewLanguage}
-            onTitleChange={(value) => updateContent('sections.languages', value)}
-          />
-          <div className="space-y-1 mt-2">
-            {content.languages?.map((lang, index) => (
-              <div 
-                key={index} 
-                className={`space-y-1 relative group cursor-move ${dragOverSection === 'languages' && dragOverIndex === index ? 'bg-gray-50 border border-dashed border-gray-300 rounded-md p-2 -m-2' : ''}`}
-                data-language-level={lang.level || 0}
-                data-language-item="true"
-                draggable={true}
-                onDragStart={(e) => handleDragStart(e, index, 'languages')}
-                onDragOver={(e) => handleDragOver(e, index, 'languages')}
-                onDragLeave={handleDragLeave}
-                onDrop={(e) => handleDrop(e, index, 'languages')}
-                onDragEnd={handleDragLeave}
-              >
-                <div className="absolute -left-6 top-1/2 transform -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <div className="flex flex-col items-center text-gray-400">
-                    <div className="w-4 h-4">⋮⋮</div>
-                  </div>
-                </div>
-                <button
-                  onClick={() => removeLanguage(index)}
-                  className="absolute -right-2 -top-2 p-1 bg-white rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-opacity hover:text-red-500"
-                >
-                  <HiTrash className="w-4 h-4" />
-                </button>
-                <div className="grid grid-cols-[1fr,auto] gap-4 items-center">
-                  <div>
-                    <EditableText
-                      value={lang.name}
-                      onChange={(value) => updateContent(`languages.${index}.name`, value)}
-                      className="font-semibold"
-                      placeholder="Language"
-                      style={{ fontSize: 'var(--title-size-item)' }}
-                    />
-                  </div>
-                  <div className="text-right flex flex-col items-end gap-2">
-                    <div className="flex items-center gap-2 language-proficiency-container">
-                      <EditableText
-                        value={lang.proficiency}
-                        onChange={(value) => updateContent(`languages.${index}.proficiency`, value)}
-                        placeholder="Proficiency"
-                        className="text-sm text-gray-600 language-proficiency-text"
-                      />
-                      <LanguageLevelSelector
-                        level={lang.level || 0}
-                        onChange={(level) => updateContent(`languages.${index}.level`, level)}
-                        color="primary"
-                        primaryColor={primaryColor}
-                      />
+            );
+          
+          case 'education':
+            return (
+              <div key={sectionType} className="space-y-1 mb-4">
+                <SectionHeader 
+                  title={content.sections?.education || "Education"}
+                  color={primaryColor}
+                  onAdd={addNewEducation}
+                  onTitleChange={(value) => updateContent('sections.education', value)}
+                  onMoveUp={canMoveUp ? () => moveSection(sectionType, 'up') : undefined}
+                  onMoveDown={canMoveDown ? () => moveSection(sectionType, 'down') : undefined}
+                  canMoveUp={canMoveUp}
+                  canMoveDown={canMoveDown}
+                />
+                {content.education.map((edu, index) => (
+                  <div 
+                    key={index} 
+                    className={`space-y-1 relative group education-item mt-2 cursor-move ${dragOverSection === 'education' && dragOverIndex === index ? 'bg-gray-50 border border-dashed border-gray-300 rounded-md p-2 -m-2' : ''}`}
+                    draggable={true}
+                    onDragStart={(e) => handleDragStart(e, index, 'education')}
+                    onDragOver={(e) => handleDragOver(e, index, 'education')}
+                    onDragLeave={handleDragLeave}
+                    onDrop={(e) => handleDrop(e, index, 'education')}
+                    onDragEnd={handleDragLeave}
+                  >
+                    <div className="absolute -left-6 top-1/2 transform -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="flex flex-col items-center text-gray-400">
+                        <div className="w-4 h-4">⋮⋮</div>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => removeEducation(index)}
+                      className="absolute -right-2 -top-2 p-1 bg-white rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-opacity hover:text-red-500"
+                    >
+                      <HiTrash className="w-4 h-4" />
+                    </button>
+                    <div className="grid grid-cols-[1fr,auto] gap-4 items-start">
+                      <div>
+                        <EditableText
+                          value={edu.degree}
+                          onChange={(value) => updateContent(`education.${index}.degree`, value)}
+                          className="font-semibold degree"
+                          placeholder="Degree"
+                          style={{ fontSize: 'var(--title-size-item)' }}
+                        />
+                        <EditableText
+                          value={edu.school}
+                          onChange={(value) => updateContent(`education.${index}.school`, value)}
+                          className="text-gray-600 school"
+                          placeholder="School"
+                        />
+                      </div>
+                      <div className="text-right text-sm text-gray-600 flex flex-col items-end">
+                        <div className="flex items-center gap-2">
+                          <EditableText
+                            value={edu.startDate || ''}
+                            onChange={(value) => updateContent(`education.${index}.startDate`, value)}
+                            className="start-date"
+                            placeholder="Start Date"
+                          />
+                          -
+                          <EditableText
+                            value={edu.endDate || ''}
+                            onChange={(value) => updateContent(`education.${index}.endDate`, value)}
+                            className="end-date"
+                            placeholder="End Date"
+                          />
+                        </div>
+                        <EditableText
+                          value={edu.location}
+                          onChange={(value) => updateContent(`education.${index}.location`, value)}
+                          className="text-gray-600 location"
+                          placeholder="Location"
+                        />
+                      </div>
                     </div>
                   </div>
-                </div>
+                ))}
               </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Certifications */}
-      {activeSections.certifications && (
-        <div className="space-y-1 mb-4">
-          <SectionHeader 
-            title={content.sections?.certifications || "Certifications"}
-            color={primaryColor}
-            onAdd={() => updateContent('certifications', [...(content.certifications || []), { name: 'New Certification', date: 'MM/YYYY' }])}
-            onTitleChange={(value) => updateContent('sections.certifications', value)}
-          />
-          {(content.certifications || []).map((cert, index) => (
-            <div 
-              key={index} 
-              className={`space-y-1 relative group mt-2 cursor-move ${dragOverSection === 'certifications' && dragOverIndex === index ? 'bg-gray-50 border border-dashed border-gray-300 rounded-md p-2 -m-2' : ''}`}
-              draggable={true}
-              onDragStart={(e) => handleDragStart(e, index, 'certifications')}
-              onDragOver={(e) => handleDragOver(e, index, 'certifications')}
-              onDragLeave={handleDragLeave}
-              onDrop={(e) => handleDrop(e, index, 'certifications')}
-              onDragEnd={handleDragLeave}
-            >
-              <div className="absolute -left-6 top-1/2 transform -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity">
-                <div className="flex flex-col items-center text-gray-400">
-                  <div className="w-4 h-4">⋮⋮</div>
-                </div>
-              </div>
-              <button
-                onClick={() => {
-                  const updatedCerts = [...(content.certifications || [])];
-                  updatedCerts.splice(index, 1);
-                  updateContent('certifications', updatedCerts);
-                }}
-                className="absolute -right-2 -top-2 p-1 bg-white rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-opacity hover:text-red-500"
-              >
-                <HiTrash className="w-4 h-4" />
-              </button>
-              <div className="grid grid-cols-[1fr,auto] gap-4 items-start">
-                <div>
-                  <EditableText
-                    value={cert.name || ''}
-                    onChange={(value) => updateContent(`certifications.${index}.name`, value)}
-                    className="font-semibold"
-                    placeholder="Certification Name"
-                    style={{ fontSize: 'var(--title-size-item)' }}
+            );
+          
+          case 'skills':
+            return (
+              <div key={sectionType} className="space-y-1 mb-4">
+                <SectionHeader 
+                  title={content.sections?.skills || "Skills"}
+                  color={primaryColor}
+                  onTitleChange={(value) => updateContent('sections.skills', value)}
+                  onMoveUp={canMoveUp ? () => moveSection(sectionType, 'up') : undefined}
+                  onMoveDown={canMoveDown ? () => moveSection(sectionType, 'down') : undefined}
+                  canMoveUp={canMoveUp}
+                  canMoveDown={canMoveDown}
+                />
+                <div className="flex flex-wrap items-center gap-2 mt-1">
+                  {content.skills.map((skill, index) => (
+                    <Tag
+                      key={`${skill}-${index}`}
+                      tag={skill}
+                      onRemove={() => removeSkill(skill)}
+                      onEdit={(newValue) => {
+                        if (newValue.trim()) {
+                          removeSkill(skill);
+                          addSkill(newValue);
+                        }
+                      }}
+                      color={primaryColor}
+                      className={`skill-tag ${dragOverSkillIndex === index ? 'ring-2 ring-white ring-opacity-70' : ''}`}
+                      onDragStart={(e) => handleSkillDragStart(e, index)}
+                      onDragOver={(e) => handleSkillDragOver(e, index)}
+                      onDrop={(e) => handleSkillDrop(e, index)}
+                      onDragLeave={handleSkillDragLeave}
+                      onDragEnd={handleSkillDragEnd}
+                      draggable={true}
+                      index={index}
+                    />
+                  ))}
+                  <input
+                    type="text"
+                    placeholder="Add skill"
+                    className="px-3 py-1 rounded-md text-sm bg-gray-50 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-opacity-50"
+                    style={{ 
+                      flexGrow: 0, 
+                      width: 'auto',
+                      minWidth: '120px',
+                      maxWidth: '200px',
+                      flexBasis: 'auto'
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        const input = e.target as HTMLInputElement;
+                        const value = input.value.trim();
+                        if (value) {
+                          addSkill(value);
+                          input.value = '';
+                        }
+                        e.preventDefault(); // Prevent form submission
+                      }
+                    }}
                   />
                 </div>
-                <div className="text-right text-sm text-gray-600 flex flex-col items-end">
-                  <div className="flex items-center gap-2">
-                    <EditableText
-                      value={cert.date || ''}
-                      onChange={(value) => updateContent(`certifications.${index}.date`, value)}
-                      placeholder="Date"
-                    />
+              </div>
+            );
+          
+          case 'projects':
+            return (
+              <div key={sectionType} className="space-y-1 mb-4">
+                <SectionHeader 
+                  title={content.sections?.projects || "Projects"}
+                  color={primaryColor}
+                  onAdd={addNewProject}
+                  onTitleChange={(value) => updateContent('sections.projects', value)}
+                  onMoveUp={canMoveUp ? () => moveSection(sectionType, 'up') : undefined}
+                  onMoveDown={canMoveDown ? () => moveSection(sectionType, 'down') : undefined}
+                  canMoveUp={canMoveUp}
+                  canMoveDown={canMoveDown}
+                />
+                {content.projects?.map((project, index) => (
+                  <div 
+                    key={index} 
+                    className={`space-y-1 relative group mt-2 cursor-move ${dragOverSection === 'projects' && dragOverIndex === index ? 'bg-gray-50 border border-dashed border-gray-300 rounded-md p-2 -m-2' : ''}`}
+                    draggable={true}
+                    onDragStart={(e) => handleDragStart(e, index, 'projects')}
+                    onDragOver={(e) => handleDragOver(e, index, 'projects')}
+                    onDragLeave={handleDragLeave}
+                    onDrop={(e) => handleDrop(e, index, 'projects')}
+                    onDragEnd={handleDragLeave}
+                  >
+                    <div className="absolute -left-6 top-1/2 transform -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="flex flex-col items-center text-gray-400">
+                        <div className="w-4 h-4">⋮⋮</div>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => removeProject(index)}
+                      className="absolute -right-2 -top-2 p-1 bg-white rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-opacity hover:text-red-500"
+                    >
+                      <HiTrash className="w-4 h-4" />
+                    </button>
+                    <div className="grid grid-cols-[1fr,auto] gap-4 items-start">
+                      <div>
+                        <EditableText
+                          value={project.title}
+                          onChange={(value) => updateContent(`projects.${index}.title`, value)}
+                          className="font-semibold"
+                          placeholder="Project Title"
+                          style={{ fontSize: 'var(--title-size-item)' }}
+                        />
+                        <EditableText
+                          value={project.description}
+                          onChange={(value) => updateContent(`projects.${index}.description`, value)}
+                          className="text-gray-600"
+                          placeholder="Description"
+                        />
+                      </div>
+                      <div className="text-right text-sm text-gray-600 flex flex-col items-end">
+                        <div className="flex items-center gap-2">
+                          <EditableText
+                            value={project.period}
+                            onChange={(value) => updateContent(`projects.${index}.period`, value)}
+                            placeholder="Period"
+                          />
+                        </div>
+                      </div>
+                    </div>
                   </div>
+                ))}
+              </div>
+            );
+          
+          case 'languages':
+            return (
+              <div key={sectionType} className="space-y-1 mb-4">
+                <SectionHeader 
+                  title={content.sections?.languages || "Languages"}
+                  color={primaryColor}
+                  onAdd={addNewLanguage}
+                  onTitleChange={(value) => updateContent('sections.languages', value)}
+                  onMoveUp={canMoveUp ? () => moveSection(sectionType, 'up') : undefined}
+                  onMoveDown={canMoveDown ? () => moveSection(sectionType, 'down') : undefined}
+                  canMoveUp={canMoveUp}
+                  canMoveDown={canMoveDown}
+                />
+                <div className="space-y-1 mt-2">
+                  {content.languages?.map((lang, index) => (
+                    <div 
+                      key={index} 
+                      className={`space-y-1 relative group cursor-move ${dragOverSection === 'languages' && dragOverIndex === index ? 'bg-gray-50 border border-dashed border-gray-300 rounded-md p-2 -m-2' : ''}`}
+                      data-language-level={lang.level || 0}
+                      data-language-item="true"
+                      draggable={true}
+                      onDragStart={(e) => handleDragStart(e, index, 'languages')}
+                      onDragOver={(e) => handleDragOver(e, index, 'languages')}
+                      onDragLeave={handleDragLeave}
+                      onDrop={(e) => handleDrop(e, index, 'languages')}
+                      onDragEnd={handleDragLeave}
+                    >
+                      <div className="absolute -left-6 top-1/2 transform -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div className="flex flex-col items-center text-gray-400">
+                          <div className="w-4 h-4">⋮⋮</div>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => removeLanguage(index)}
+                        className="absolute -right-2 -top-2 p-1 bg-white rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-opacity hover:text-red-500"
+                      >
+                        <HiTrash className="w-4 h-4" />
+                      </button>
+                      <div className="grid grid-cols-[1fr,auto] gap-4 items-center">
+                        <div>
+                          <EditableText
+                            value={lang.name}
+                            onChange={(value) => updateContent(`languages.${index}.name`, value)}
+                            className="font-semibold"
+                            placeholder="Language"
+                            style={{ fontSize: 'var(--title-size-item)' }}
+                          />
+                        </div>
+                        <div className="text-right flex flex-col items-end gap-2">
+                          <div className="flex items-center gap-2 language-proficiency-container">
+                            <EditableText
+                              value={lang.proficiency}
+                              onChange={(value) => updateContent(`languages.${index}.proficiency`, value)}
+                              placeholder="Proficiency"
+                              className="text-sm text-gray-600 language-proficiency-text"
+                            />
+                            <LanguageLevelSelector
+                              level={lang.level || 0}
+                              onChange={(level) => updateContent(`languages.${index}.level`, level)}
+                              color="primary"
+                              primaryColor={primaryColor}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
-      )}
+            );
+          
+          case 'certifications':
+            return (
+              <div key={sectionType} className="space-y-1 mb-4">
+                <SectionHeader 
+                  title={content.sections?.certifications || "Certifications"}
+                  color={primaryColor}
+                  onAdd={() => updateContent('certifications', [...(content.certifications || []), { name: 'New Certification', date: 'MM/YYYY' }])}
+                  onTitleChange={(value) => updateContent('sections.certifications', value)}
+                  onMoveUp={canMoveUp ? () => moveSection(sectionType, 'up') : undefined}
+                  onMoveDown={canMoveDown ? () => moveSection(sectionType, 'down') : undefined}
+                  canMoveUp={canMoveUp}
+                  canMoveDown={canMoveDown}
+                />
+                {(content.certifications || []).map((cert, index) => (
+                  <div 
+                    key={index} 
+                    className={`space-y-1 relative group mt-2 cursor-move ${dragOverSection === 'certifications' && dragOverIndex === index ? 'bg-gray-50 border border-dashed border-gray-300 rounded-md p-2 -m-2' : ''}`}
+                    draggable={true}
+                    onDragStart={(e) => handleDragStart(e, index, 'certifications')}
+                    onDragOver={(e) => handleDragOver(e, index, 'certifications')}
+                    onDragLeave={handleDragLeave}
+                    onDrop={(e) => handleDrop(e, index, 'certifications')}
+                    onDragEnd={handleDragLeave}
+                  >
+                    <div className="absolute -left-6 top-1/2 transform -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="flex flex-col items-center text-gray-400">
+                        <div className="w-4 h-4">⋮⋮</div>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => {
+                        const updatedCerts = [...(content.certifications || [])];
+                        updatedCerts.splice(index, 1);
+                        updateContent('certifications', updatedCerts);
+                      }}
+                      className="absolute -right-2 -top-2 p-1 bg-white rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-opacity hover:text-red-500"
+                    >
+                      <HiTrash className="w-4 h-4" />
+                    </button>
+                    <div className="grid grid-cols-[1fr,auto] gap-4 items-start">
+                      <div>
+                        <EditableText
+                          value={cert.name || ''}
+                          onChange={(value) => updateContent(`certifications.${index}.name`, value)}
+                          className="font-semibold"
+                          placeholder="Certification Name"
+                          style={{ fontSize: 'var(--title-size-item)' }}
+                        />
+                      </div>
+                      <div className="text-right text-sm text-gray-600 flex flex-col items-end">
+                        <div className="flex items-center gap-2">
+                          <EditableText
+                            value={cert.date || ''}
+                            onChange={(value) => updateContent(`certifications.${index}.date`, value)}
+                            placeholder="Date"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            );
+          
+          default:
+            return null;
+        }
+      })}
 
       <Watermark />
     </article>

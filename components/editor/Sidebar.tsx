@@ -26,6 +26,7 @@ import { FaLinkedin, FaGithub } from 'react-icons/fa';
 import { generatePDF } from '@/utils/pdfGenerator';
 import { ChevronDown } from 'lucide-react';
 import Image from 'next/image';
+import Link from 'next/link';
 
 const colors = [
   '#000000', // Black (replacing Indigo)
@@ -172,13 +173,15 @@ export default function Sidebar({
           {/* Brand */}
           <div className="flex items-center justify-start p-2 border-b border-gray-200 flex-shrink-0">
             <div className="-ml-4">
-              <Image 
-                src="/images/logo.svg" 
-                alt="ResumeCool Logo" 
-                width={250} 
-                height={100} 
-                className="h-20 w-auto transition-all duration-500 ease-out"
-              />
+              <Link href="/" className="block cursor-pointer">
+                <Image 
+                  src="/images/logo.svg" 
+                  alt="ResumeCool Logo" 
+                  width={250} 
+                  height={100} 
+                  className="h-20 w-auto transition-all duration-500 ease-out"
+                />
+              </Link>
             </div>
           </div>
 

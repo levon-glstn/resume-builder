@@ -52,12 +52,34 @@ export default function RootLayout({
       <head>
         <link rel="icon" href="/images/favicon.ico" sizes="any" />
         <title>Resume Builder</title>
-        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, minimum-scale=0.1, user-scalable=yes" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <meta name="description" content="Create professional resumes in minutes" />
         <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet" />
         <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700&display=swap" rel="stylesheet" />
         <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet" />
         <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+        <script dangerouslySetInnerHTML={{
+          __html: `
+            // Set viewport meta tag based on device
+            (function() {
+              var viewport = document.querySelector('meta[name="viewport"]');
+              if (window.innerWidth <= 768) {
+                viewport.content = "width=device-width, initial-scale=1.0, user-scalable=no";
+              } else {
+                viewport.content = "width=device-width, initial-scale=1.0";
+              }
+              
+              // Update on resize
+              window.addEventListener('resize', function() {
+                if (window.innerWidth <= 768) {
+                  viewport.content = "width=device-width, initial-scale=1.0, user-scalable=no";
+                } else {
+                  viewport.content = "width=device-width, initial-scale=1.0";
+                }
+              });
+            })();
+          `
+        }} />
       </head>
       <body>
         {children}

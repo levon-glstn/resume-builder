@@ -63,18 +63,20 @@ export default function Home() {
       
       {/* Footer */}
       <footer className="bg-gray-900 text-white py-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="container mx-auto px-4">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-            <div className="space-y-4">
-              <a href="#home" className="block -ml-0 sm:-ml-3 md:-ml-4 lg:-ml-5">
-                <Image 
-                  src="/images/logo.svg" 
-                  alt="ResumeCool Logo" 
-                  width={250} 
-                  height={100} 
-                  className="h-22 w-auto"
-                />
-              </a>
+            <div className="flex flex-col space-y-4">
+              <div className="self-start">
+                <a href="#home">
+                  <Image 
+                    src="/images/logo.svg" 
+                    alt="ResumeCool Logo" 
+                    width={250} 
+                    height={100} 
+                    className="h-22 w-auto"
+                  />
+                </a>
+              </div>
               <p className="text-gray-400 text-sm">
                 Create professional resumes in minutes with our easy-to-use builder.
               </p>

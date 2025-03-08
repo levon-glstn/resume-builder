@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import Editor from '../../components/editor/Editor';
 import Sidebar from '../../components/editor/Sidebar';
+import ZoomableEditor from '../../components/editor/ZoomableEditor';
 import type { ResumeContent } from '../../types/resume';
 import { Poppins, Rubik, Roboto, Open_Sans } from 'next/font/google';
 import ContentWarning from '../../components/editor/ContentWarning';
@@ -68,6 +69,7 @@ export default function EditorPage() {
   const [fontFamily, setFontFamily] = useState('Poppins');
   const [fontSize, setFontSize] = useState('medium');
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   const [activeSections, setActiveSections] = useState<Record<string, boolean>>({
     experience: true,
     education: true,
@@ -83,6 +85,20 @@ export default function EditorPage() {
   });
 
   const resumeRef = useRef<HTMLElement>(null);
+
+  // Check if we're on a mobile device
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    
+    return () => {
+      window.removeEventListener('resize', checkMobile);
+    };
+  }, []);
 
   // Generate gradient background colors based on the primary color
   const getGradientBackground = (color: string) => {
@@ -208,7 +224,7 @@ export default function EditorPage() {
         onCollapsedChange={handleSidebarCollapsedChange}
       />
       <main 
-        className={`flex-1 overflow-auto py-8 animate-gradient touch-auto transition-all duration-500 ease-out`}
+        className={`flex-1 overflow-auto py-8 animate-gradient transition-all duration-500 ease-out ${isMobile ? 'touch-auto pb-20' : ''}`}
         style={{
           ...getGradientBackground(primaryColor),
           minHeight: '100vh',
@@ -217,29 +233,30 @@ export default function EditorPage() {
           paddingLeft: isSidebarCollapsed ? '1rem' : '1rem'
         }}
       >
-        <div 
-          className="mx-auto transition-all duration-700 ease-out" 
-          style={{ 
-            maxWidth: 'calc(210mm + 2rem)',
-            transform: isSidebarCollapsed ? 'scale(1.02)' : 'scale(1)',
-            transformOrigin: 'center top',
-            opacity: 1,
-            filter: `brightness(${isSidebarCollapsed ? 1.02 : 1})`,
-            boxShadow: isSidebarCollapsed 
-              ? '0 10px 25px -5px rgba(0, 0, 0, 0.12), 0 8px 10px -6px rgba(0, 0, 0, 0.12)' 
-              : '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)'
-          }}
-        >
-          <Editor
-            ref={resumeRef}
-            content={content}
-            onContentChange={setContent}
-            activeSections={activeSections}
-            primaryColor={primaryColor}
-            fontFamily={fontFamily}
-            fontSize={fontSize}
-          />
-        </div>
+        <ZoomableEditor className="mx-auto transition-all duration-700 ease-out">
+          <div 
+            style={{ 
+              maxWidth: 'calc(210mm + 2rem)',
+              transform: isSidebarCollapsed ? 'scale(1.02)' : 'scale(1)',
+              transformOrigin: 'center top',
+              opacity: 1,
+              filter: `brightness(${isSidebarCollapsed ? 1.02 : 1})`,
+              boxShadow: isSidebarCollapsed 
+                ? '0 10px 25px -5px rgba(0, 0, 0, 0.12), 0 8px 10px -6px rgba(0, 0, 0, 0.12)' 
+                : '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)'
+            }}
+          >
+            <Editor
+              ref={resumeRef}
+              content={content}
+              onContentChange={setContent}
+              activeSections={activeSections}
+              primaryColor={primaryColor}
+              fontFamily={fontFamily}
+              fontSize={fontSize}
+            />
+          </div>
+        </ZoomableEditor>
         <ContentWarning resumeElement={resumeRef.current} />
       </main>
     </div>

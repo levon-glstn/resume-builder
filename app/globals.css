@@ -2,14 +2,14 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Touch interaction styles for mobile zooming */
-.touch-auto {
-  touch-action: manipulation !important;
-  -webkit-overflow-scrolling: touch;
-}
-
-/* Ensure the resume container can be zoomed on mobile */
+/* Touch interaction styles for mobile zooming - only applied on mobile */
 @media (max-width: 768px) {
+  .touch-auto {
+    touch-action: manipulation !important;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Ensure the resume container can be zoomed on mobile */
   .resume-hover-effect {
     transform-origin: center center;
     transition: transform 0.2s ease;
@@ -26,6 +26,53 @@
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
     overscroll-behavior: contain;
+  }
+  
+  /* Improved mobile touch handling */
+  .mobile-gesture-container {
+    touch-action: none !important;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+    -webkit-tap-highlight-color: transparent;
+    transform-style: preserve-3d;
+    perspective: 1000px;
+  }
+  
+  /* Prevent text selection during gestures */
+  .prevent-select {
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+  }
+  
+  /* Disable default browser pinch zoom behavior */
+  html, body {
+    touch-action: pan-x pan-y !important;
+    overscroll-behavior: none;
+  }
+  
+  /* Ensure content doesn't overflow on small screens */
+  .editor-container {
+    max-width: 100vw;
+    overflow-x: hidden;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+  }
+  
+  /* Enhanced zoom container */
+  .zoom-container {
+    transform-origin: center center;
+    will-change: transform;
+    transition: transform 0.2s ease;
+    min-height: 100vh;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
   }
 }
 

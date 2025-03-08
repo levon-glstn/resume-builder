@@ -75,6 +75,16 @@ function isMobileDevice(): boolean {
   );
 }
 
+// Function to detect Safari
+const isSafari = (): boolean => {
+  return /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+};
+
+// Function to detect iOS
+const isIOS = (): boolean => {
+  return /iphone|ipad|ipod/i.test(navigator.userAgent.toLowerCase());
+};
+
 export default function Sidebar({
   primaryColor,
   activeSections,
@@ -116,6 +126,17 @@ export default function Sidebar({
     setIsGeneratingPDF(true);
     try {
       await generatePDF(resumeRef.current);
+      
+      // For mobile and Safari, keep the message visible a bit longer
+      if (isMobile || isSafari()) {
+        // iOS needs a longer delay as it might take longer to open the PDF viewer
+        const delayTime = isIOS() ? 4000 : 3000;
+        
+        setTimeout(() => {
+          setIsGeneratingPDF(false);
+        }, delayTime);
+        return;
+      }
     } catch (error) {
       console.error('Failed to generate PDF:', error);
       // You might want to show an error toast here
@@ -211,9 +232,13 @@ export default function Sidebar({
                   <HiDownload className={`w-5 h-5 ${isGeneratingPDF ? 'animate-bounce' : ''}`} />
                   <span>
                     {isGeneratingPDF 
-                      ? isMobile
-                        ? 'Opening in a new tab...'
-                        : 'Generating PDF...' 
+                      ? (isIOS()
+                         ? 'Opening PDF viewer...'
+                         : isMobile 
+                           ? 'Opening in a new tab...'
+                           : isSafari()
+                             ? 'Opening PDF viewer...'
+                             : 'Generating PDF...') 
                       : 'Download PDF'
                     }
                   </span>

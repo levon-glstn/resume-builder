@@ -348,6 +348,18 @@ function isMobileDevice(): boolean {
   );
 }
 
+// Add a function to detect iOS devices
+function isIOS(): boolean {
+  return /iphone|ipad|ipod/i.test(
+    navigator.userAgent.toLowerCase()
+  );
+}
+
+// Add a function to detect Safari
+function isSafari(): boolean {
+  return /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+}
+
 export async function generatePDF(resumeElement: HTMLElement): Promise<void> {
   try {
     // Ensure Poppins font is loaded
@@ -1259,15 +1271,76 @@ export async function generatePDF(resumeElement: HTMLElement): Promise<void> {
     
     // Check if it's a mobile device
     if (isMobileDevice()) {
-      // For mobile devices, open the PDF in a new tab using blob URL
-      const pdfBlob = pdf.output('blob');
-      const blobUrl = URL.createObjectURL(pdfBlob);
-      window.open(blobUrl, '_blank');
+      console.log('Using mobile PDF handling');
       
-      // Clean up the blob URL after a delay to ensure it's loaded
-      setTimeout(() => {
-        URL.revokeObjectURL(blobUrl);
-      }, 30000); // 30 seconds should be enough for the PDF to load
+      try {
+        // For iOS devices, use a data URI approach which works better
+        if (isIOS()) {
+          console.log('Using iOS-specific PDF handling');
+          
+          // Get PDF as data URI
+          const pdfData = pdf.output('datauristring');
+          
+          // Create a link and click it
+          const link = document.createElement('a');
+          link.href = pdfData;
+          link.target = '_blank';
+          link.rel = 'noopener noreferrer';
+          
+          // iOS requires the link to be in the DOM and visible
+          link.style.position = 'fixed';
+          link.style.top = '0';
+          link.style.left = '0';
+          link.style.opacity = '0';
+          document.body.appendChild(link);
+          
+          // Simulate a click
+          const event = document.createEvent('MouseEvents');
+          event.initEvent('click', true, true);
+          link.dispatchEvent(event);
+          
+          // Clean up after a delay
+          setTimeout(() => {
+            document.body.removeChild(link);
+          }, 1000);
+          
+          console.log('PDF opened using data URI approach for iOS');
+        } 
+        // For Android and other mobile devices
+        else {
+          console.log('Using standard mobile PDF handling');
+          
+          // Use the blob approach but with a longer timeout
+          const pdfBlob = new Blob([pdf.output('arraybuffer')], { type: 'application/pdf' });
+          const blobUrl = URL.createObjectURL(pdfBlob);
+          
+          // Create a link and click it instead of using window.open
+          const link = document.createElement('a');
+          link.href = blobUrl;
+          link.target = '_blank';
+          link.rel = 'noopener noreferrer';
+          link.click();
+          
+          // Clean up the blob URL after a longer delay
+          setTimeout(() => {
+            URL.revokeObjectURL(blobUrl);
+          }, 60000); // 60 seconds to ensure it's loaded
+          
+          console.log('PDF opened using blob URL approach for Android');
+        }
+      } catch (mobileError) {
+        console.error('Mobile PDF handling error:', mobileError);
+        
+        // Fallback to the simplest approach
+        try {
+          // Get PDF as data URI and just change location
+          const pdfData = pdf.output('datauristring');
+          window.location.href = pdfData;
+          console.log('PDF opened using location change fallback');
+        } catch (fallbackError) {
+          console.error('Mobile fallback error:', fallbackError);
+        }
+      }
     } else {
       // For desktop browsers, save the PDF as a download
       pdf.save(fileName);
